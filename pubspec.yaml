@@ -1,0 +1,77 @@
+name: medicare
+description: "MediCare - Healthcare Mobile Application"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.3
+
+  # HTTP & API
+  dio: ^5.8.0+1
+
+  # Storage
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.3.5
+
+  # Security
+  local_auth: ^2.3.0
+
+  # Notifications
+  flutter_local_notifications: ^18.0.1
+
+  # UI & Fonts
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.17
+  cached_network_image: ^3.4.1
+  shimmer: ^3.0.0
+  lottie: ^3.3.1
+
+  # Charts & Calendar (Sprint 3+)
+  fl_chart: ^0.70.2
+  table_calendar: ^3.2.0
+
+  # Forms & Validation
+  flutter_form_builder: ^10.0.1
+  form_builder_validators: ^11.1.2
+
+  # Teleconsultation (Sprint 15)
+  jitsi_meet_flutter_sdk: ^10.0.0
+
+  # Profile & Documents (Sprint 16)
+  image_picker: ^1.1.2
+  pdf: ^3.11.1
+  printing: ^5.13.2
+
+  # Payment — Stripe (Sprint 18)
+  flutter_stripe: ^11.3.0
+
+  # Utils
+  intl: ^0.20.2
+  equatable: ^2.0.7
+  logger: ^2.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.15
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
