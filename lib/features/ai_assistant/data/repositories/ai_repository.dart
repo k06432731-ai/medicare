@@ -1,77 +1,63 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/config/ai_config.dart';
+import '../../../../core/constants/api_constants.dart';
+import '../../../../core/network/dio_client.dart';
 import '../models/chat_message_model.dart';
 import '../models/triage_result_model.dart';
 
-final aiRepositoryProvider = Provider<AiRepository>((ref) => AiRepository());
+final aiRepositoryProvider = Provider<AiRepository>((ref) {
+  final dio = ref.watch(dioClientProvider);
+  return AiRepository(dio);
+});
 
 class AiRepository {
-  late final Dio _dio = Dio(BaseOptions(
-    baseUrl: AiConfig.baseUrl,
-    connectTimeout: const Duration(seconds: 30),
-    receiveTimeout: const Duration(seconds: 60),
-    headers: {
-      'Authorization': 'Bearer ${AiConfig.openAiKey}',
-      'Content-Type': 'application/json',
-    },
-  ));
+  final Dio _dio;
+  const AiRepository(this._dio);
 
   // ── Chat ──────────────────────────────────────────────────────────────────
 
-  /// Envoie l'historique de conversation et retourne la réponse du modèle.
+  /// Envoie l'historique de conversation au backend et retourne la réponse.
+  /// Le backend appelle OpenAI côté serveur — aucune clé dans l'APK.
   Future<String> chat(List<ChatMessageModel> history) async {
-    if (!AiConfig.isConfigured) {
-      throw Exception(
-          '⚠️ Clé OpenAI non configurée. Ajoutez votre clé dans ai_config.dart');
-    }
-
-    final messages = [
-      {'role': 'system', 'content': AiConfig.systemChatPrompt},
-      ...history.where((m) => !m.isTyping).map((m) => m.toApiMessage()),
-    ];
+    final messages = history
+        .where((m) => !m.isTyping)
+        .map((m) => m.toApiMessage())
+        .toList();
 
     try {
-      final res = await _dio.post('/chat/completions', data: {
-        'model': AiConfig.model,
-        'messages': messages,
-        'temperature': AiConfig.temperature,
-        'max_tokens': AiConfig.maxTokens,
-      });
-      return res.data['choices'][0]['message']['content'] as String;
+      final res = await _dio.post(
+        ApiConstants.aiAssistantChat,
+        data: {
+          'messages': messages,
+          'mode': 'chat',
+        },
+      );
+      return res.data['data']['reply'] as String;
     } on DioException catch (e) {
       final msg = e.response?.data?['error']?['message'] as String?;
-      throw Exception(msg ?? 'Erreur OpenAI (${e.response?.statusCode})');
+      throw Exception(msg ?? 'Erreur IA (${e.response?.statusCode})');
     }
   }
 
   // ── Triage ────────────────────────────────────────────────────────────────
 
-  /// Analyse les symptômes et retourne un TriageResultModel.
+  /// Analyse les symptômes via le backend et retourne un TriageResultModel.
   Future<TriageResultModel> triage(String symptoms) async {
-    if (!AiConfig.isConfigured) {
-      throw Exception(
-          '⚠️ Clé OpenAI non configurée. Ajoutez votre clé dans ai_config.dart');
-    }
-
     try {
-      final res = await _dio.post('/chat/completions', data: {
-        'model': AiConfig.model,
-        'messages': [
-          {'role': 'system', 'content': AiConfig.systemTriagePrompt},
-          {'role': 'user', 'content': symptoms},
-        ],
-        'temperature': 0.3, // plus déterministe pour le triage
-        'max_tokens': 300,
-      });
+      final res = await _dio.post(
+        ApiConstants.aiDoctorTriage,
+        data: {
+          'symptoms': symptoms,
+          'mode': 'triage',
+        },
+      );
 
-      final raw = res.data['choices'][0]['message']['content'] as String;
-      final result = TriageResultModel.tryParse(raw);
-      if (result == null) throw Exception('Réponse du modèle non analysable');
+      final data = res.data['data'] as Map<String, dynamic>;
+      final result = TriageResultModel.fromJson(data);
       return result;
     } on DioException catch (e) {
       final msg = e.response?.data?['error']?['message'] as String?;
-      throw Exception(msg ?? 'Erreur OpenAI (${e.response?.statusCode})');
+      throw Exception(msg ?? 'Erreur triage (${e.response?.statusCode})');
     }
   }
 }

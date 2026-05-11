@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "prescriptions",
+  "info": {
+    "singularName": "prescription",
+    "pluralName": "prescriptions",
+    "displayName": "Prescription"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "issuedDate": {
+      "type": "date",
+      "required": true
+    },
+    "expiryDate": {
+      "type": "date"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "expired", "cancelled"],
+      "default": "active"
+    },
+    "medications": {
+      "type": "json",
+      "required": true
+    },
+    "instructions": {
+      "type": "text"
+    },
+    "diagnosis": {
+      "type": "string"
+    },
+    "appointment": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::appointment.appointment",
+      "inversedBy": "prescription"
+    },
+    "patient": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "doctor": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

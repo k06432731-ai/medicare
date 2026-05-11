@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "appointments",
+  "info": {
+    "singularName": "appointment",
+    "pluralName": "appointments",
+    "displayName": "Appointment",
+    "description": "Medical appointments between patients and doctors"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "appointmentDate": {
+      "type": "datetime",
+      "required": true
+    },
+    "endTime": {
+      "type": "datetime"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "confirmed", "cancelled", "completed", "no_show"],
+      "default": "pending",
+      "required": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["in_person", "teleconsultation"],
+      "default": "in_person"
+    },
+    "reason": {
+      "type": "string",
+      "required": true
+    },
+    "notes": {
+      "type": "text"
+    },
+    "doctorNotes": {
+      "type": "text",
+      "private": true
+    },
+    "patient": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "appointments"
+    },
+    "doctor": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "doctorAppointments"
+    },
+    "prescription": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::prescription.prescription",
+      "mappedBy": "appointment"
+    }
+  }
+}

@@ -8,6 +8,7 @@ const _kNotifPrescription = 'notif_prescription';
 const _kNotifInvoice = 'notif_invoice';
 const _kBiometricEnabled = 'biometric_enabled';
 const _kAutoLockMinutes = 'auto_lock_minutes';
+const _kDarkMode = 'dark_mode';
 
 // ── SharedPreferences provider (overridden in main.dart) ────────────────────
 
@@ -23,6 +24,7 @@ class AppSettings {
   final bool notifInvoice;
   final bool biometricEnabled;
   final int autoLockMinutes; // 0 = never, 1, 5, 15, 30
+  final bool darkMode;
 
   const AppSettings({
     this.notifAppointment = true,
@@ -30,6 +32,7 @@ class AppSettings {
     this.notifInvoice = true,
     this.biometricEnabled = false,
     this.autoLockMinutes = 5,
+    this.darkMode = false,
   });
 
   AppSettings copyWith({
@@ -38,6 +41,7 @@ class AppSettings {
     bool? notifInvoice,
     bool? biometricEnabled,
     int? autoLockMinutes,
+    bool? darkMode,
   }) {
     return AppSettings(
       notifAppointment: notifAppointment ?? this.notifAppointment,
@@ -45,6 +49,7 @@ class AppSettings {
       notifInvoice: notifInvoice ?? this.notifInvoice,
       biometricEnabled: biometricEnabled ?? this.biometricEnabled,
       autoLockMinutes: autoLockMinutes ?? this.autoLockMinutes,
+      darkMode: darkMode ?? this.darkMode,
     );
   }
 }
@@ -63,6 +68,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       notifInvoice: prefs.getBool(_kNotifInvoice) ?? true,
       biometricEnabled: prefs.getBool(_kBiometricEnabled) ?? false,
       autoLockMinutes: prefs.getInt(_kAutoLockMinutes) ?? 5,
+      darkMode: prefs.getBool(_kDarkMode) ?? false,
     );
   }
 
@@ -89,6 +95,11 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> setAutoLockMinutes(int v) async {
     await _prefs.setInt(_kAutoLockMinutes, v);
     state = state.copyWith(autoLockMinutes: v);
+  }
+
+  Future<void> setDarkMode(bool v) async {
+    await _prefs.setBool(_kDarkMode, v);
+    state = state.copyWith(darkMode: v);
   }
 }
 

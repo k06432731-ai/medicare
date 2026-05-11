@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medicare/core/network/dio_client.dart';
 import 'package:medicare/features/prescription/data/models/prescription_model.dart';
@@ -7,7 +8,7 @@ final prescriptionRepositoryProvider = Provider<PrescriptionRepository>((ref) {
 });
 
 class PrescriptionRepository {
-  final dynamic _dio;
+  final Dio _dio;
 
   PrescriptionRepository(this._dio);
 
@@ -18,7 +19,9 @@ class PrescriptionRepository {
         'pagination[pageSize]': '50',
         'populate': 'doctor',
       };
-      if (status != null && status != 'all') params['status'] = status;
+      if (status != null && status != 'all') {
+        params['filters[status][\$eq]'] = status;
+      }
 
       final response = await _dio.get('/prescriptions', queryParameters: params);
       final raw = response.data;
@@ -37,7 +40,7 @@ class PrescriptionRepository {
   Future<List<PrescriptionModel>> getByPatient(int patientId) async {
     try {
       final response = await _dio.get('/prescriptions', queryParameters: {
-        'patientId': patientId,
+        'filters[patient][id][\$eq]': patientId,
         'sort': 'issuedDate:desc',
         'pagination[pageSize]': '50',
         'populate': 'doctor',

@@ -39,7 +39,7 @@ class RecoveryRepository {
       if (status != null) params['status'] = status;
       if (type != null) params['type'] = type;
       if (priority != null) params['priority'] = priority;
-      final res = await _dio.get('/recovery-engine/cases', queryParameters: params);
+      final res = await _dio.get('/recovery-engine/active-cases', queryParameters: params);
       final data = res.data['data'] as List? ?? [];
       return data.map((e) => RecoveryCaseModel.fromJson(e as Map<String, dynamic>)).toList();
     } on DioException catch (e) {
@@ -51,7 +51,7 @@ class RecoveryRepository {
     try {
       final body = <String, dynamic>{'status': status};
       if (notes != null) body['notes'] = notes;
-      final res = await _dio.put('/recovery-engine/cases/$id', data: body);
+      final res = await _dio.put('/recovery-engine/active-cases/$id', data: body);
       return RecoveryCaseModel.fromJson(res.data['data'] as Map<String, dynamic>);
     } on DioException catch (e) {
       throw parseDioError(e);

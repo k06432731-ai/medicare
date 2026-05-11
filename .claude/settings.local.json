@@ -57,7 +57,29 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\kba\\\\Desktop\\\\Medicare Flutter\\\\medicare\\\\lib\" -Directory)",
       "Bash(Select-Object Name)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\kba\\\\Desktop\\\\Medicare Flutter\\\\medicare\\\\lib\\\\features\" -Recurse)",
-      "Bash(Select-Object -ExpandProperty FullName)"
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(find '/c/Users/kba/Desktop' -name \"api_constants.dart\" -o -name \"api_config.dart\" 2>/dev/null | head -20)",
+      "Bash(ls \"/mnt/c/Users/kba/Desktop/Medicare Flutter/medicare-backend/src/\" 2>/dev/null || echo \"NOT FOUND\")",
+      "Bash(cd \"/mnt/c/Users/kba/Desktop/Medicare Flutter/medicare\" && flutter analyze --no-fatal-infos 2>&1 | tail -30)",
+      "Bash(flutter test *)",
+      "Bash(echo \"\")",
+      "Bash(cat)",
+      "Bash(dir /B)",
+      "Bash(ls \"C:/Users/kba/AppData/Local/Android/Sdk/emulator/\" 2>&1 | head -10)",
+      "Bash(echo \"Strapi PID: $!\")",
+      "Bash(ANDROID_SDK_ROOT=\"/c/Users/kba/AppData/Local/Android/Sdk\" /c/Users/kba/AppData/Local/Android/Sdk/emulator/emulator -avd Pixel_4_XL -no-snapshot-save)",
+      "Bash(echo \"Emulator PID: $!\")",
+      "Bash(sleep 8 && cat /tmp/strapi.log 2>&1 | tail -20)",
+      "Bash(curl -s http://localhost:1337/api/admin-stats)",
+      "Bash(echo \"Flutter run PID: $!\")",
+      "Bash(curl -s http://localhost:1337/api/auth/local -X POST -H \"Content-Type: application/json\" -d '{\"identifier\":\"admin@medicare.tn\",\"password\":\"Admin1234!\"}')",
+      "Bash(curl -s http://localhost:1337/api/auth/local -X POST -H 'Content-Type: application/json' -d '{\"identifier\":\"newpatient@medicare.com\",\"password\":\"Medicare123\"}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('JWT:', d.get\\('jwt',''\\)[:40]+'...'\\); print\\('User ID:', d.get\\('user',{}\\).get\\('id'\\)\\); print\\('Role:', d.get\\('user',{}\\).get\\('appRole'\\)\\)\")",
+      "Bash(\"/c/Users/kba/AppData/Local/Android/Sdk/emulator/emulator\" -avd Pixel_4_XL -no-snapshot-load)",
+      "Bash(\"/c/Users/kba/AppData/Local/Android/Sdk/platform-tools/adb\" devices *)",
+      "Bash(echo \"Flutter PID: $!\")",
+      "Bash(docker --version)",
+      "Bash(cd \"/c/Users/kba/Desktop/Medicare Flutter/medicare-backend\" && grep -c \"\\\\\"pg\\\\\"\" package-lock.json && echo \"✓ pg trouvé dans le lock file\")"
     ]
   }
 }

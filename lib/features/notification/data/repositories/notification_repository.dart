@@ -11,9 +11,15 @@ class NotificationRepository {
   final Dio _dio;
   NotificationRepository(this._dio);
 
-  Future<List<NotificationModel>> getMyNotifications() async {
+  Future<List<NotificationModel>> getMyNotifications({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     try {
-      final res = await _dio.get('/notification-engine/my');
+      final res = await _dio.get('/notification-engine/my-notifications', queryParameters: {
+        'pagination[page]': page,
+        'pagination[pageSize]': pageSize,
+      });
       final data = res.data['data'] as List? ?? [];
       return data
           .map((e) => NotificationModel.fromJson(e as Map<String, dynamic>))

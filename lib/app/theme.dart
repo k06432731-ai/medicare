@@ -199,4 +199,105 @@ class AppTheme {
       margin: EdgeInsets.zero,
     );
   }
+
+  // ── Dark Theme ───────────────────────────────────────────────────────────────
+
+  static ThemeData get dark {
+    final base = ThemeData.dark(useMaterial3: true);
+    const darkSurface = Color(0xFF1E1E2E);
+    const darkBackground = Color(0xFF13131F);
+    const darkCard = Color(0xFF252535);
+    const darkBorder = Color(0xFF3A3A50);
+    const darkText = Color(0xFFE2E2F0);
+    const darkTextSecondary = Color(0xFF9898B0);
+
+    return base.copyWith(
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.primary,
+        onPrimary: Colors.white,
+        primaryContainer: Color(0xFF2D2D50),
+        secondary: AppColors.secondary,
+        onSecondary: Colors.white,
+        error: AppColors.error,
+        surface: darkSurface,
+        onSurface: darkText,
+        surfaceContainerHighest: darkCard,
+        outline: darkBorder,
+      ),
+      scaffoldBackgroundColor: darkBackground,
+      textTheme: GoogleFonts.poppinsTextTheme(base.textTheme).copyWith(
+        bodyLarge: GoogleFonts.poppins(fontSize: 16, color: darkText, height: 1.5),
+        bodyMedium: GoogleFonts.poppins(fontSize: 14, color: darkTextSecondary, height: 1.5),
+        bodySmall: GoogleFonts.poppins(fontSize: 12, color: darkTextSecondary, height: 1.5),
+        titleLarge: GoogleFonts.poppins(fontSize: 17, fontWeight: FontWeight.w600, color: darkText),
+        titleMedium: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: darkText),
+        titleSmall: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: darkText),
+        labelLarge: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.white),
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: darkSurface,
+        foregroundColor: darkText,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        titleTextStyle: GoogleFonts.poppins(
+          fontSize: 18, fontWeight: FontWeight.w600, color: darkText,
+        ),
+        iconTheme: const IconThemeData(color: darkText, size: 24),
+      ),
+      cardTheme: CardThemeData(
+        color: darkCard,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: darkBorder),
+        ),
+        margin: EdgeInsets.zero,
+      ),
+      dividerTheme: const DividerThemeData(
+        color: darkBorder,
+        thickness: 1,
+        space: 1,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: darkCard,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: darkBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: darkBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
+        hintStyle: GoogleFonts.poppins(color: darkTextSecondary, fontSize: 14),
+        labelStyle: GoogleFonts.poppins(color: darkTextSecondary, fontSize: 14),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          minimumSize: const Size(double.infinity, 54),
+          textStyle: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return AppColors.primary;
+          return Colors.transparent;
+        }),
+        side: const BorderSide(color: darkBorder, width: 1.5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      ),
+    );
+  }
 }

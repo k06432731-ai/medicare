@@ -164,16 +164,19 @@ class _AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 1,
+      shadowColor: Colors.black.withValues(alpha: 0.05),
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        children: [
+        onTap: () => context.push(
+          Routes.appointmentDetail,
+          extra: appointment,
+        ),
+        child: Column(
+          children: [
           _buildHeader(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -229,6 +232,7 @@ class _AppointmentCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medicare/core/network/dio_client.dart';
 import '../models/invoice_model.dart';
@@ -7,7 +8,7 @@ final invoiceRepositoryProvider = Provider<InvoiceRepository>((ref) {
 });
 
 class InvoiceRepository {
-  final dynamic _dio;
+  final Dio _dio;
   InvoiceRepository(this._dio);
 
   Future<List<InvoiceModel>> getMyInvoices() async {
@@ -26,7 +27,7 @@ class InvoiceRepository {
   Future<List<InvoiceModel>> getByPatient(int patientId) async {
     try {
       final res = await _dio.get('/invoices', queryParameters: {
-        'patientId': patientId,
+        'filters[patient][id][\$eq]': patientId,
         'sort': 'createdAt:desc',
         'pagination[pageSize]': '50',
         'populate': 'doctor,appointment,labOrder',
@@ -48,6 +49,12 @@ class InvoiceRepository {
     }
   }
 
+  /// ⚠️ DÉPRÉCIÉ — Ne pas utiliser directement.
+  /// Le paiement doit toujours passer par PaymentRepository
+  /// (payment-engine/init → Sobflous/D17, ou stripe-engine/create-intent → Stripe).
+  /// Cette méthode contourne les notifications et l'audit trail.
+  /// Conservée uniquement pour les tests admin et les ajustements manuels.
+  @Deprecated('Utiliser PaymentRepository.initDirectPayment() ou confirmStripePayment()')
   Future<InvoiceModel> payInvoice(
       int id, PaymentMethod method) async {
     try {

@@ -82,4 +82,25 @@ class ScheduleRepository {
       throw parseDioError(e);
     }
   }
+
+  // ── Public availability (patient-facing) ────────────────────────────────────
+
+  /// Retourne les créneaux disponibles d'un médecin pour une date donnée.
+  /// Utilisé dans BookAppointmentScreen pour griser les créneaux bloqués.
+  Future<Map<String, dynamic>> getPublicAvailability({
+    required int doctorId,
+    required String date, // format YYYY-MM-DD
+  }) async {
+    try {
+      final res = await _dio.get(
+        '/schedule-engine/public-availability',
+        queryParameters: {'doctorId': doctorId, 'date': date},
+      );
+      return res.data as Map<String, dynamic>? ?? {};
+    } on DioException catch (e) {
+      // Graceful degradation: if endpoint absent, return empty (all slots shown)
+      if (e.response?.statusCode == 404) return {};
+      throw parseDioError(e);
+    }
+  }
 }

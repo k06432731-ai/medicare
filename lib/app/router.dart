@@ -29,10 +29,13 @@ import '../features/recovery/presentation/screens/recovery_center_screen.dart';
 import '../features/notification/presentation/screens/notifications_screen.dart';
 import '../features/messaging/presentation/screens/chat_screen.dart';
 import '../features/ai_assistant/presentation/screens/ai_assistant_screen.dart';
+import '../features/ai_assistant/presentation/screens/ai_doctor_screen.dart';
 import '../features/messaging/data/models/conversation_model.dart';
 import '../features/teleconsultation/presentation/screens/teleconsultation_screen.dart';
 import '../features/schedule/presentation/screens/doctor_schedule_screen.dart';
 import '../features/payment/presentation/screens/payment_screen.dart';
+import '../features/appointment/presentation/screens/appointment_detail_screen.dart';
+import '../features/appointment/data/models/appointment_model.dart';
 import '../core/security/app_lock_provider.dart';
 import '../core/security/app_lock_screen.dart';
 import '../core/constants/app_colors.dart';
@@ -69,7 +72,11 @@ class Routes {
   static const teleconsultation = '/teleconsultation';
   static const doctorSchedule = '/doctor/schedule';
   static const payment = '/patient/payment';
+  static const appointmentDetail = '/patient/appointment-detail';
   static String bookAppointment(int doctorId) => '/patient/book/$doctorId';
+  static const paymentSuccess = '/payment/success';
+  static const paymentCancel = '/payment/cancel';
+  static const aiDoctor = '/ai-doctor';
 }
 
 // ── Router notifier ───────────────────────────────────────────────────────────
@@ -255,6 +262,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, _) => const PatientInvoicesScreen(),
       ),
       GoRoute(
+        path: Routes.appointmentDetail,
+        builder: (context, state) {
+          final appointment = state.extra as AppointmentModel;
+          return AppointmentDetailScreen(appointment: appointment);
+        },
+      ),
+      GoRoute(
         path: Routes.patientLabOrders,
         builder: (context, _) => Scaffold(
           appBar: AppBar(
@@ -301,6 +315,94 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.aiAssistant,
         builder: (context, _) => const AiAssistantScreen(),
+      ),
+      GoRoute(
+        path: Routes.aiDoctor,
+        builder: (context, _) => const AiDoctorScreen(),
+      ),
+      // ── Deep links : retour paiement ───────────────────────────────────────
+      GoRoute(
+        path: Routes.paymentSuccess,
+        builder: (context, state) {
+          final invoiceId = state.uri.queryParameters['invoiceId'] ?? '';
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.check_circle_rounded,
+                          color: AppColors.success, size: 64),
+                    ),
+                    const SizedBox(height: 24),
+                    Text('Paiement réussi !',
+                        style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary)),
+                    if (invoiceId.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text('Facture #$invoiceId confirmée',
+                          style: const TextStyle(color: AppColors.textSecondary)),
+                    ],
+                    const SizedBox(height: 32),
+                    ElevatedButton(
+                      onPressed: () => context.go(Routes.patientHome),
+                      child: const Text('Retour à l\'accueil'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: Routes.paymentCancel,
+        builder: (context, state) => Scaffold(
+          backgroundColor: AppColors.background,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.cancel_rounded,
+                        color: AppColors.error, size: 64),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('Paiement annulé',
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary)),
+                  const SizedBox(height: 8),
+                  const Text('Votre paiement n\'a pas été effectué.',
+                      style: TextStyle(color: AppColors.textSecondary)),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Retour'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
       GoRoute(
         path: Routes.doctorSchedule,

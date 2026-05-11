@@ -29,6 +29,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scroll = ScrollController();
   Timer? _timer;
   bool _sending = false;
+  bool _polling = false; // guard: skip if a fetch is already in-flight
 
   @override
   void initState() {
@@ -39,9 +40,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           .read(messagingNotifierProvider.notifier)
           .markRead(widget.conversation.id);
     });
-    // Polling toutes les 4 secondes
-    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (mounted) ref.invalidate(messagesProvider(widget.conversation.id));
+    // Polling toutes les 8 secondes avec garde anti-chevauchement.
+    // On n'invalide pas si l'écran est occupé à envoyer un message
+    // (l'envoi invalide lui-même le provider après succès).
+    _timer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (!mounted || _sending || _polling) return;
+      _polling = true;
+      ref.invalidate(messagesProvider(widget.conversation.id));
+      // Réinitialise le flag après le prochain frame (le rebuild a eu lieu)
+      WidgetsBinding.instance.addPostFrameCallback((_) => _polling = false);
     });
   }
 
@@ -115,9 +122,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary)),
-                Text('En ligne',
-                    style: GoogleFonts.poppins(
-                        fontSize: 11, color: AppColors.success)),
+                Text(
+                  // Affiche le rôle réel de l'interlocuteur (pas de statut "En ligne" fictif)
+                  widget.conversation.doctorId == myId ? 'Patient' : 'Médecin',
+                  style: GoogleFonts.poppins(
+                      fontSize: 11, color: AppColors.textSecondary),
+                ),
               ],
             ),
           ],

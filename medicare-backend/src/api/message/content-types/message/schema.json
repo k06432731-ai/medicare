@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "messages",
+  "info": {
+    "singularName": "message",
+    "pluralName": "messages",
+    "displayName": "Message"
+  },
+  "options": { "draftAndPublish": false },
+  "pluginOptions": {},
+  "attributes": {
+    "conversationId": { "type": "integer", "required": true },
+    "senderId":       { "type": "integer", "required": true },
+    "senderName":     { "type": "string" },
+    "senderRole": {
+      "type": "enumeration",
+      "enum": ["patient", "doctor"],
+      "required": true
+    },
+    "content":     { "type": "text",    "required": true },
+    "read":        { "type": "boolean", "default": false },
+    "messageType": { "type": "enumeration", "enum": ["text", "image", "document"], "default": "text" }
+  }
+}

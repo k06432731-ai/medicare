@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/theme/theme_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/locale_provider.dart';
 
@@ -12,6 +13,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final locale = ref.watch(localeProvider);
+    final isDarkMode = ref.watch(themeModeProvider) == ThemeMode.dark;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -56,6 +58,26 @@ class SettingsScreen extends ConsumerWidget {
             value: settings.notifInvoice,
             onChanged: (v) =>
                 ref.read(settingsProvider.notifier).setNotifInvoice(v),
+          ),
+
+          const SizedBox(height: 28),
+
+          // ── Apparence ─────────────────────────────────────────────────────
+          _SectionHeader(title: 'Apparence'),
+          const SizedBox(height: 10),
+          _ToggleCard(
+            icon: Icons.dark_mode_rounded,
+            iconColor: const Color(0xFF6366F1),
+            title: 'Mode sombre',
+            subtitle: 'Interface en thème nuit',
+            value: isDarkMode,
+            onChanged: (v) {
+              // Synchronise le ThemeMode applicatif et le flag persistant.
+              ref
+                  .read(themeModeProvider.notifier)
+                  .setTheme(v ? ThemeMode.dark : ThemeMode.light);
+              ref.read(settingsProvider.notifier).setDarkMode(v);
+            },
           ),
 
           const SizedBox(height: 28),

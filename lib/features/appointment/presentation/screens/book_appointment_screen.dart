@@ -11,6 +11,8 @@ import 'package:medicare/features/doctor/providers/doctor_provider.dart';
 import 'package:medicare/shared/widgets/medicare_button.dart';
 import 'package:medicare/app/router.dart' show Routes;
 import 'package:medicare/features/home/presentation/screens/patient_shell_screen.dart' show patientTabProvider;
+import 'package:medicare/features/schedule/providers/schedule_provider.dart'
+    show PublicAvailabilityParams, publicAvailabilityProvider;
 
 class BookAppointmentScreen extends ConsumerStatefulWidget {
   final int doctorId;
@@ -26,6 +28,8 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
   DateTime? _selectedDay;
   TimeOfDay? _selectedTime;
   AppointmentType _selectedType = AppointmentType.inPerson;
+  // Slots already booked for the selected day (fetched from backend)
+  Set<String> _bookedSlots = {};
   final _reasonController = TextEditingController();
   final _notesController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -199,7 +203,23 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
             _selectedDay = selected;
             _focusedDay = focused;
             _selectedTime = null;
+            _bookedSlots = {};
           });
+          // Fetch real booked slots for this day from backend
+          final dateStr =
+              '${selected.year.toString().padLeft(4, '0')}-${selected.month.toString().padLeft(2, '0')}-${selected.day.toString().padLeft(2, '0')}';
+          ref
+              .read(publicAvailabilityProvider(PublicAvailabilityParams(
+                  doctorId: widget.doctorId, date: dateStr))
+                  .future)
+              .then((data) {
+            if (mounted) {
+              final raw = data['bookedSlots'];
+              if (raw is List) {
+                setState(() => _bookedSlots = raw.map((e) => e.toString()).toSet());
+              }
+            }
+          }).catchError((_) {}); // graceful degradation
         },
         enabledDayPredicate: (day) {
           return day.weekday != DateTime.saturday && day.weekday != DateTime.sunday;
@@ -232,25 +252,42 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
         runSpacing: 8,
         children: _timeSlots.map((slot) {
           final selected = _selectedTime == slot;
+          // Format as HH:mm to match backend booked slots
+          final slotKey =
+              '${slot.hour.toString().padLeft(2, '0')}:${slot.minute.toString().padLeft(2, '0')}';
+          final isBooked = _bookedSlots.contains(slotKey);
           final label = slot.format(context);
           return GestureDetector(
-            onTap: () => setState(() => _selectedTime = slot),
+            onTap: isBooked ? null : () => setState(() => _selectedTime = slot),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: selected ? AppColors.primary : Colors.white,
+                color: isBooked
+                    ? AppColors.border
+                    : selected
+                        ? AppColors.primary
+                        : Colors.white,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: selected ? AppColors.primary : AppColors.border,
+                  color: isBooked
+                      ? AppColors.border
+                      : selected
+                          ? AppColors.primary
+                          : AppColors.border,
                 ),
               ),
               child: Text(
                 label,
                 style: TextStyle(
-                  color: selected ? Colors.white : AppColors.textPrimary,
+                  color: isBooked
+                      ? AppColors.textHint
+                      : selected
+                          ? Colors.white
+                          : AppColors.textPrimary,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                   fontSize: 13,
+                  decoration: isBooked ? TextDecoration.lineThrough : null,
                 ),
               ),
             ),

@@ -1,0 +1,75 @@
+{
+  "kind": "collectionType",
+  "collectionName": "recovery_cases",
+  "info": {
+    "singularName": "recovery-case",
+    "pluralName": "recovery-cases",
+    "displayName": "Recovery Case",
+    "description": "A detected care journey break requiring automated recovery action"
+  },
+  "options": { "draftAndPublish": false },
+  "attributes": {
+    "type": {
+      "type": "enumeration",
+      "enum": ["noShow", "abandonedBooking", "inactivePatient", "interruptedChronic", "incompletePreconsult", "missedCall"],
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["open", "inProgress", "recovered", "escalated", "closed"],
+      "default": "open",
+      "required": true
+    },
+    "priority": {
+      "type": "enumeration",
+      "enum": ["low", "medium", "high", "critical"],
+      "default": "medium",
+      "required": true
+    },
+    "attempts": {
+      "type": "integer",
+      "default": 0
+    },
+    "channel": {
+      "type": "enumeration",
+      "enum": ["inApp", "whatsapp", "sms", "staff"],
+      "default": "inApp"
+    },
+    "triggerDate": {
+      "type": "datetime",
+      "required": true
+    },
+    "recoveredAt": {
+      "type": "datetime"
+    },
+    "closedAt": {
+      "type": "datetime"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "patientId": {
+      "type": "integer",
+      "required": true
+    },
+    "patientName": {
+      "type": "string"
+    },
+    "patientPhone": {
+      "type": "string"
+    },
+    "appointmentId": {
+      "type": "integer"
+    },
+    "appointmentDate": {
+      "type": "datetime"
+    },
+    "doctorName": {
+      "type": "string"
+    },
+    "estimatedValue": {
+      "type": "decimal",
+      "default": 0
+    }
+  }
+}

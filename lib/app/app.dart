@@ -5,7 +5,9 @@ import 'router.dart';
 import 'theme.dart';
 import '../core/network/dio_client.dart';
 import '../core/security/app_lock_provider.dart';
+import '../core/services/deep_link_service.dart';
 import '../core/services/notification_service.dart';
+import '../core/theme/theme_provider.dart';
 import '../features/auth/providers/auth_provider.dart';
 import '../features/notification/providers/notification_provider.dart';
 import '../features/settings/providers/locale_provider.dart';
@@ -31,6 +33,11 @@ class _MedicareAppState extends ConsumerState<MedicareApp>
 
     // Initialise les notifications locales (pas de Firebase nécessaire)
     NotificationService.instance.initialize();
+
+    // Initialise l'écoute des deep links après la construction du routeur.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      DeepLinkService.init(ref.read(routerProvider));
+    });
   }
 
   @override
@@ -71,11 +78,14 @@ class _MedicareAppState extends ConsumerState<MedicareApp>
   Widget build(BuildContext context) {
     final router = ref.watch(routerProvider);
     final locale = ref.watch(localeProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: 'MediCare',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
       routerConfig: router,
       locale: locale,
       supportedLocales: LocaleNotifier.supported,

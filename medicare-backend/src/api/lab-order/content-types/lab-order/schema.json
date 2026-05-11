@@ -1,0 +1,57 @@
+{
+  "kind": "collectionType",
+  "collectionName": "lab_orders",
+  "info": {
+    "singularName": "lab-order",
+    "pluralName": "lab-orders",
+    "displayName": "Lab Order",
+    "description": "Laboratory analysis orders prescribed by doctors"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "in_progress", "completed", "cancelled"],
+      "default": "pending",
+      "required": true
+    },
+    "tests": {
+      "type": "json",
+      "required": true
+    },
+    "totalAmount": {
+      "type": "decimal",
+      "default": 0
+    },
+    "orderedAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "completedAt": {
+      "type": "datetime"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "results": {
+      "type": "text"
+    },
+    "patient": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "doctor": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "laboratory": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::laboratory.laboratory"
+    }
+  }
+}

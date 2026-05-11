@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medicare/core/network/dio_client.dart';
 import '../models/laboratory_model.dart';
@@ -8,7 +9,7 @@ final laboratoryRepositoryProvider =
 });
 
 class LaboratoryRepository {
-  final dynamic _dio;
+  final Dio _dio;
   LaboratoryRepository(this._dio);
 
   Future<List<LaboratoryModel>> getLaboratories({LabType? type}) async {

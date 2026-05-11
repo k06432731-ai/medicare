@@ -1,0 +1,17 @@
+{
+  "kind": "collectionType",
+  "collectionName": "schedule_blocks",
+  "info": {
+    "singularName": "schedule-block",
+    "pluralName": "schedule-blocks",
+    "displayName": "Schedule Block"
+  },
+  "options": { "draftAndPublish": false },
+  "attributes": {
+    "doctorId":  { "type": "integer", "required": true },
+    "blockDate": { "type": "date", "required": true },
+    "startTime": { "type": "string", "required": true },
+    "endTime":   { "type": "string", "required": true },
+    "reason":    { "type": "string" }
+  }
+}

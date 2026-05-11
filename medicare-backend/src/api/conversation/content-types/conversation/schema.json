@@ -1,0 +1,21 @@
+{
+  "kind": "collectionType",
+  "collectionName": "conversations",
+  "info": {
+    "singularName": "conversation",
+    "pluralName": "conversations",
+    "displayName": "Conversation"
+  },
+  "options": { "draftAndPublish": false },
+  "pluginOptions": {},
+  "attributes": {
+    "patientId":      { "type": "integer", "required": true },
+    "patientName":    { "type": "string" },
+    "doctorId":       { "type": "integer", "required": true },
+    "doctorName":     { "type": "string" },
+    "lastMessage":    { "type": "string" },
+    "lastMessageAt":  { "type": "datetime" },
+    "patientUnread":  { "type": "integer", "default": 0 },
+    "doctorUnread":   { "type": "integer", "default": 0 }
+  }
+}

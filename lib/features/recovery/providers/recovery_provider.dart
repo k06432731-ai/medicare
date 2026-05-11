@@ -7,18 +7,21 @@ import '../data/models/staff_task_model.dart';
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
 
-final recoveryStatsProvider = FutureProvider<RecoveryStats>((ref) async {
+final recoveryStatsProvider =
+    FutureProvider.autoDispose<RecoveryStats>((ref) async {
   return ref.watch(recoveryRepositoryProvider).getStats();
 });
 
 // ── Cases ─────────────────────────────────────────────────────────────────────
 
 final recoveryCasesProvider =
-    FutureProvider.family<List<RecoveryCaseModel>, String?>((ref, status) async {
+    FutureProvider.autoDispose.family<List<RecoveryCaseModel>, String?>(
+        (ref, status) async {
   return ref.watch(recoveryRepositoryProvider).getCases(status: status);
 });
 
-final activeCasesProvider = FutureProvider<List<RecoveryCaseModel>>((ref) async {
+final activeCasesProvider =
+    FutureProvider.autoDispose<List<RecoveryCaseModel>>((ref) async {
   final repo = ref.watch(recoveryRepositoryProvider);
   final open = await repo.getCases(status: 'open');
   final inProgress = await repo.getCases(status: 'inProgress');
@@ -28,17 +31,20 @@ final activeCasesProvider = FutureProvider<List<RecoveryCaseModel>>((ref) async 
 
 // ── Staff Tasks ────────────────────────────────────────────────────────────────
 
-final staffTasksProvider = FutureProvider<List<StaffTaskModel>>((ref) async {
+final staffTasksProvider =
+    FutureProvider.autoDispose<List<StaffTaskModel>>((ref) async {
   return ref.watch(recoveryRepositoryProvider).getStaffTasks();
 });
 
 // ── Risk Scores ────────────────────────────────────────────────────────────────
 
-final criticalRiskScoresProvider = FutureProvider<List<RiskScoreModel>>((ref) async {
+final criticalRiskScoresProvider =
+    FutureProvider.autoDispose<List<RiskScoreModel>>((ref) async {
   return ref.watch(recoveryRepositoryProvider).getRiskScores(level: 'critical');
 });
 
-final highRiskScoresProvider = FutureProvider<List<RiskScoreModel>>((ref) async {
+final highRiskScoresProvider =
+    FutureProvider.autoDispose<List<RiskScoreModel>>((ref) async {
   return ref.watch(recoveryRepositoryProvider).getRiskScores(level: 'high');
 });
 
@@ -50,7 +56,8 @@ class DoctorRecoveryView {
   const DoctorRecoveryView({required this.cases, required this.riskScores});
 }
 
-final doctorRecoveryViewProvider = FutureProvider<DoctorRecoveryView>((ref) async {
+final doctorRecoveryViewProvider =
+    FutureProvider.autoDispose<DoctorRecoveryView>((ref) async {
   final raw = await ref.watch(recoveryRepositoryProvider).getDoctorView();
   final casesData = raw['cases'] as List? ?? [];
   final scoresData = raw['riskScores'] as List? ?? [];
@@ -67,7 +74,8 @@ final doctorRecoveryViewProvider = FutureProvider<DoctorRecoveryView>((ref) asyn
 // ── Patient Risk ───────────────────────────────────────────────────────────────
 
 final patientRiskProvider =
-    FutureProvider.family<Map<String, dynamic>, int>((ref, patientId) async {
+    FutureProvider.autoDispose.family<Map<String, dynamic>, int>(
+        (ref, patientId) async {
   return ref.watch(recoveryRepositoryProvider).getPatientRisk(patientId);
 });
 
@@ -99,7 +107,8 @@ class RecoveryCaseNotifier extends StateNotifier<AsyncValue<void>> {
 }
 
 final recoveryCaseNotifierProvider =
-    StateNotifierProvider<RecoveryCaseNotifier, AsyncValue<void>>((ref) {
+    StateNotifierProvider.autoDispose<RecoveryCaseNotifier, AsyncValue<void>>(
+        (ref) {
   return RecoveryCaseNotifier(ref.watch(recoveryRepositoryProvider));
 });
 
@@ -124,6 +133,7 @@ class StaffTaskNotifier extends StateNotifier<AsyncValue<void>> {
 }
 
 final staffTaskNotifierProvider =
-    StateNotifierProvider<StaffTaskNotifier, AsyncValue<void>>((ref) {
+    StateNotifierProvider.autoDispose<StaffTaskNotifier, AsyncValue<void>>(
+        (ref) {
   return StaffTaskNotifier(ref.watch(recoveryRepositoryProvider), ref);
 });

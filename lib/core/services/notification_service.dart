@@ -19,31 +19,36 @@ class NotificationService {
   Future<void> initialize() async {
     if (_initialized) return;
 
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const ios = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+    try {
+      const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const ios = DarwinInitializationSettings(
+        requestAlertPermission: true,
+        requestBadgePermission: true,
+        requestSoundPermission: true,
+      );
 
-    await _plugin.initialize(
-      const InitializationSettings(android: android, iOS: ios),
-    );
+      await _plugin.initialize(
+        const InitializationSettings(android: android, iOS: ios),
+      );
 
-    // Crée le canal Android (requis Android 8+)
-    await _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(
-          const AndroidNotificationChannel(
-            _channelId,
-            _channelName,
-            description: _channelDesc,
-            importance: Importance.high,
-          ),
-        );
+      // Crée le canal Android (requis Android 8+)
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(
+            const AndroidNotificationChannel(
+              _channelId,
+              _channelName,
+              description: _channelDesc,
+              importance: Importance.high,
+            ),
+          );
 
-    _initialized = true;
+      _initialized = true;
+    } catch (_) {
+      // Plugin non disponible (environnement de test ou plateforme non supportée)
+      // L'app continue sans notifications locales OS.
+    }
   }
 
   /// Appelé par le watcher de provider quand le count change.

@@ -48,6 +48,17 @@ class TriageResultModel {
     required this.disclaimer,
   });
 
+  /// Parse depuis une Map déjà décodée (réponse backend structurée)
+  factory TriageResultModel.fromJson(Map<String, dynamic> data) {
+    return TriageResultModel(
+      urgency: TriageUrgencyX.fromApi(data['urgency'] as String?),
+      specialty: data['specialty'] as String? ?? 'Médecin généraliste',
+      recommendation: data['recommendation'] as String? ?? '',
+      disclaimer: data['disclaimer'] as String? ??
+          'Consultez un médecin pour un diagnostic précis.',
+    );
+  }
+
   /// Parse depuis la réponse brute du LLM (extrait le JSON même si entouré de markdown)
   static TriageResultModel? tryParse(String raw) {
     try {

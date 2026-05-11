@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medicare/core/network/dio_client.dart';
 import 'package:medicare/features/doctor/data/models/doctor_model.dart';
@@ -7,7 +8,7 @@ final doctorRepositoryProvider = Provider<DoctorRepository>((ref) {
 });
 
 class DoctorRepository {
-  final dynamic _dio;
+  final Dio _dio;
 
   DoctorRepository(this._dio);
 
@@ -15,7 +16,7 @@ class DoctorRepository {
     try {
       final Map<String, dynamic> params = {
         'filters[appRole][\$eq]': 'doctor',
-        'filters[isAvailable][\$eq]': 'true',
+        'filters[isAvailable][\$eq]': true,
         'populate': 'avatar',
         'pagination[pageSize]': '50',
       };
@@ -40,12 +41,22 @@ class DoctorRepository {
     }
   }
 
+  /// Récupère uniquement les spécialités des médecins actifs.
+  /// Optimisé : ne charge que le champ specialty (pas d'avatar, pas de données lourdes).
   Future<List<String>> getSpecialties() async {
     try {
-      final doctors = await getDoctors();
-      final specialties = doctors
-          .map((d) => d.specialty)
+      final response = await _dio.get('/users', queryParameters: {
+        'filters[appRole][\$eq]': 'doctor',
+        'filters[isAvailable][\$eq]': true,
+        'fields[0]': 'specialty',
+        'pagination[pageSize]': '200',
+      });
+      final List<dynamic> data =
+          response.data is List ? response.data as List : [];
+      final specialties = data
+          .map((e) => e['specialty'] as String?)
           .whereType<String>()
+          .where((s) => s.isNotEmpty)
           .toSet()
           .toList()
         ..sort();

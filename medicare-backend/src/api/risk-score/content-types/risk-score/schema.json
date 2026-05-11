@@ -1,0 +1,58 @@
+{
+  "kind": "collectionType",
+  "collectionName": "risk_scores",
+  "info": {
+    "singularName": "risk-score",
+    "pluralName": "risk-scores",
+    "displayName": "Risk Score",
+    "description": "Patient risk score calculated by the Recovery Engine"
+  },
+  "options": { "draftAndPublish": false },
+  "attributes": {
+    "patientId": {
+      "type": "integer",
+      "required": true
+    },
+    "patientName": {
+      "type": "string"
+    },
+    "score": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
+    "level": {
+      "type": "enumeration",
+      "enum": ["low", "medium", "high", "critical"],
+      "default": "low",
+      "required": true
+    },
+    "noShowCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "daysSinceLastVisit": {
+      "type": "integer",
+      "default": 0
+    },
+    "openCasesCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "hasExpiredPrescription": {
+      "type": "boolean",
+      "default": false
+    },
+    "daysSinceLastAppOpen": {
+      "type": "integer",
+      "default": 0
+    },
+    "signals": {
+      "type": "json"
+    },
+    "calculatedAt": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medicare/core/network/dio_client.dart';
 import '../models/lab_order_model.dart';
@@ -8,7 +9,7 @@ final labOrderRepositoryProvider =
 });
 
 class LabOrderRepository {
-  final dynamic _dio;
+  final Dio _dio;
   LabOrderRepository(this._dio);
 
   static const _populate =
@@ -30,7 +31,7 @@ class LabOrderRepository {
   Future<List<LabOrderModel>> getByPatient(int patientId) async {
     try {
       final res = await _dio.get('/lab-orders', queryParameters: {
-        'patientId': patientId,
+        'filters[patient][id][\$eq]': patientId,
         'sort': 'orderedAt:desc',
         'pagination[pageSize]': '50',
         'populate': _populate,

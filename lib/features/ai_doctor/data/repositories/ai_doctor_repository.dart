@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/prescription_draft_model.dart';
 
@@ -27,7 +28,7 @@ class AiDoctorRepository {
       if (allergies != null && allergies.isNotEmpty) body['allergies'] = allergies;
       if (patientName != null && patientName.isNotEmpty) body['patientName'] = patientName;
 
-      final res = await _dio.post('/ai-doctor/prescription-draft', data: body);
+      final res = await _dio.post(ApiConstants.aiDoctorPrescriptionDraft, data: body);
       return PrescriptionDraftModel.fromJson(
           res.data['data'] as Map<String, dynamic>);
     } on DioException catch (e) {
@@ -39,7 +40,7 @@ class AiDoctorRepository {
 
   Future<String> summarizePatient(int patientId) async {
     try {
-      final res = await _dio.post('/ai-doctor/summarize-patient',
+      final res = await _dio.post(ApiConstants.aiDoctorPatientSummary,
           data: {'patientId': patientId});
       return res.data['data']['summary'] as String? ?? '';
     } on DioException catch (e) {
@@ -59,7 +60,7 @@ class AiDoctorRepository {
       if (patientAge != null && patientAge.isNotEmpty) body['patientAge'] = patientAge;
       if (medicalHistory != null && medicalHistory.isNotEmpty) body['medicalHistory'] = medicalHistory;
 
-      final res = await _dio.post('/ai-doctor/diagnostic-suggestions', data: body);
+      final res = await _dio.post(ApiConstants.aiDoctorDiagnosticSuggestions, data: body);
       return DiagnosticSuggestionsModel.fromJson(
           res.data['data'] as Map<String, dynamic>);
     } on DioException catch (e) {

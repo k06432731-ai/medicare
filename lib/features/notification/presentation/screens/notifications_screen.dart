@@ -6,13 +6,42 @@ import '../../../../core/constants/app_colors.dart';
 import '../../data/models/notification_model.dart';
 import '../../providers/notification_provider.dart';
 
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifsAsync = ref.watch(notificationsProvider);
+  ConsumerState<NotificationsScreen> createState() =>
+      _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
+  final _scrollCtrl = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollCtrl.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // Déclenche loadMore quand l'utilisateur est à 200 px du bas
+    final pos = _scrollCtrl.position;
+    if (pos.pixels >= pos.maxScrollExtent - 200) {
+      ref.read(notificationListProvider.notifier).loadMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(notificationListProvider);
     final notifier = ref.read(notificationNotifierProvider.notifier);
+    final hasUnread = state.items.any((n) => !n.read);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -24,48 +53,90 @@ class NotificationsScreen extends ConsumerWidget {
             style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
         actions: [
-          notifsAsync.whenOrNull(
-                data: (list) {
-                  if (list.any((n) => !n.read)) {
-                    return TextButton(
-                      onPressed: () => notifier.markAllRead(),
-                      child: Text('Tout lire',
-                          style: GoogleFonts.poppins(
-                              color: AppColors.primary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600)),
-                    );
-                  }
-                  return null;
-                },
-              ) ??
-              const SizedBox.shrink(),
+          if (hasUnread)
+            TextButton(
+              onPressed: () async {
+                await notifier.markAllRead();
+                ref.read(notificationListProvider.notifier).loadFirst();
+              },
+              child: Text('Tout lire',
+                  style: GoogleFonts.poppins(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
+            ),
           const SizedBox(width: 8),
         ],
       ),
-      body: notifsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(
-            child: Text(e.toString(),
-                style: const TextStyle(color: AppColors.error))),
-        data: (list) {
-          if (list.isEmpty) return _EmptyState();
+      body: Builder(
+        builder: (context) {
+          if (state.isLoading && state.items.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.error != null && state.items.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline,
+                      size: 48, color: AppColors.error),
+                  const SizedBox(height: 12),
+                  Text(state.error!,
+                      style:
+                          const TextStyle(color: AppColors.textSecondary)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () =>
+                        ref.read(notificationListProvider.notifier).loadFirst(),
+                    child: const Text('Réessayer'),
+                  ),
+                ],
+              ),
+            );
+          }
+          if (state.items.isEmpty) {
+            return _EmptyState();
+          }
+
           return RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(notificationsProvider);
+              await ref
+                  .read(notificationListProvider.notifier)
+                  .loadFirst();
               ref.invalidate(unreadCountProvider);
             },
             child: ListView.separated(
+              controller: _scrollCtrl,
               padding: const EdgeInsets.symmetric(vertical: 12),
-              itemCount: list.length,
-              separatorBuilder: (context, i) =>
+              itemCount: state.items.length + (state.hasMore ? 1 : 0),
+              separatorBuilder: (_, i) =>
                   const Divider(height: 1, indent: 72, endIndent: 16),
-              itemBuilder: (context, i) => _NotifTile(
-                notif: list[i],
-                onTap: () {
-                  if (!list[i].read) notifier.markRead(list[i].id);
-                },
-              ),
+              itemBuilder: (context, i) {
+                // Footer loader
+                if (i == state.items.length) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Center(
+                      child: state.isLoading
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const SizedBox.shrink(),
+                    ),
+                  );
+                }
+                final notif = state.items[i];
+                return _NotifTile(
+                  notif: notif,
+                  onTap: () async {
+                    if (!notif.read) {
+                      await notifier.markRead(notif.id);
+                      ref.read(notificationListProvider.notifier).loadFirst();
+                    }
+                  },
+                );
+              },
             ),
           );
         },

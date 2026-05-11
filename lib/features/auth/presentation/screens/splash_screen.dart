@@ -70,6 +70,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     _navigated = true;
 
     if (authState is AuthAuthenticated) {
+      // Vérifier si le compte est confirmé (email confirmation Strapi)
+      // Si non confirmé, on laisse quand même accéder mais on montrera un banner
+      // dans le dashboard (Strapi génère un token même si confirmed: false)
       context.go(switch (authState.user.role) {
         'doctor' => Routes.doctorHome,
         'admin' => Routes.adminHome,

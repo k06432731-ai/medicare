@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "notifications",
+  "info": {
+    "singularName": "notification",
+    "pluralName": "notifications",
+    "displayName": "Notification"
+  },
+  "options": { "draftAndPublish": false },
+  "pluginOptions": {},
+  "attributes": {
+    "title":  { "type": "string",  "required": true },
+    "body":   { "type": "string",  "required": true },
+    "type": {
+      "type": "enumeration",
+      "enum": ["appointment", "prescription", "invoice", "recovery", "message", "system"],
+      "required": true,
+      "default": "system"
+    },
+    "userId": { "type": "integer", "required": true },
+    "read":   { "type": "boolean", "default": false },
+    "data":   { "type": "json" }
+  }
+}

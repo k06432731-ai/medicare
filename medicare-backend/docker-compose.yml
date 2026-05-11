@@ -1,0 +1,52 @@
+# ============================================================
+#  Medicare backend - local production-like stack
+#  Usage:  docker compose --env-file .env.production up -d
+# ============================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: medicare-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-medicare}
+      POSTGRES_USER: ${DATABASE_USERNAME:-medicare_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-CHANGE_ME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME:-medicare_user} -d ${DATABASE_NAME:-medicare}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - medicare-net
+
+  strapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: medicare-strapi
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "1337:1337"
+    volumes:
+      - strapi_uploads:/app/public/uploads
+    networks:
+      - medicare-net
+
+volumes:
+  postgres_data:
+  strapi_uploads:
+
+networks:
+  medicare-net:
+    driver: bridge

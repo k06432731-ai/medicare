@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:medicare/core/constants/app_colors.dart';
 
 enum InvoiceStatus { pending, paid, cancelled, refunded }
-enum InvoiceType { consultation, labTest }
+enum InvoiceType { consultation, labTest, prescription }
 enum PaymentMethod { cash, bankTransfer, mobileMoney, card }
 
 extension InvoiceStatusExt on InvoiceStatus {
@@ -30,18 +30,22 @@ extension InvoiceTypeExt on InvoiceType {
   String get label => switch (this) {
         InvoiceType.consultation => 'Consultation',
         InvoiceType.labTest => 'Analyse / Labo',
+        InvoiceType.prescription => 'Ordonnance',
       };
   String get apiValue => switch (this) {
         InvoiceType.consultation => 'consultation',
         InvoiceType.labTest => 'lab_test',
+        InvoiceType.prescription => 'prescription',
       };
   IconData get icon => switch (this) {
         InvoiceType.consultation => Icons.medical_services_rounded,
         InvoiceType.labTest => Icons.science_rounded,
+        InvoiceType.prescription => Icons.receipt_long_rounded,
       };
   Color get color => switch (this) {
         InvoiceType.consultation => AppColors.doctorColor,
         InvoiceType.labTest => const Color(0xFF06B6D4),
+        InvoiceType.prescription => AppColors.secondary,
       };
 }
 
@@ -119,8 +123,11 @@ class InvoiceModel {
       case 'refunded': status = InvoiceStatus.refunded;
     }
 
-    InvoiceType type = InvoiceType.consultation;
-    if (data['type'] == 'lab_test') type = InvoiceType.labTest;
+    InvoiceType type = switch (data['type'] as String? ?? '') {
+      'lab_test' => InvoiceType.labTest,
+      'prescription' => InvoiceType.prescription,
+      _ => InvoiceType.consultation,
+    };
 
     PaymentMethod? paymentMethod;
     switch (data['paymentMethod'] as String? ?? '') {

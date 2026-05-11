@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medicare/core/network/dio_client.dart';
 import 'package:medicare/features/medical_record/data/models/medical_record_model.dart';
@@ -7,7 +8,7 @@ final medicalRecordRepositoryProvider = Provider<MedicalRecordRepository>((ref) 
 });
 
 class MedicalRecordRepository {
-  final dynamic _dio;
+  final Dio _dio;
 
   MedicalRecordRepository(this._dio);
 
@@ -18,7 +19,9 @@ class MedicalRecordRepository {
         'pagination[pageSize]': '50',
         'populate': 'doctor',
       };
-      if (type != null && type != 'all') params['type'] = type;
+      if (type != null && type != 'all') {
+        params['filters[type][\$eq]'] = type;
+      }
 
       final response = await _dio.get('/medical-records', queryParameters: params);
       final raw = response.data;
@@ -37,7 +40,7 @@ class MedicalRecordRepository {
   Future<List<MedicalRecordModel>> getByPatient(int patientId) async {
     try {
       final response = await _dio.get('/medical-records', queryParameters: {
-        'patientId': patientId,
+        'filters[patient][id][\$eq]': patientId,
         'sort': 'date:desc',
         'pagination[pageSize]': '50',
         'populate': 'doctor',

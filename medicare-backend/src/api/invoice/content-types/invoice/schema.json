@@ -1,0 +1,66 @@
+{
+  "kind": "collectionType",
+  "collectionName": "invoices",
+  "info": {
+    "singularName": "invoice",
+    "pluralName": "invoices",
+    "displayName": "Invoice",
+    "description": "Billing for consultations and lab tests"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "paid", "cancelled", "refunded"],
+      "default": "pending",
+      "required": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["consultation", "lab_test"],
+      "required": true
+    },
+    "description": {
+      "type": "string"
+    },
+    "paymentMethod": {
+      "type": "enumeration",
+      "enum": ["cash", "bank_transfer", "mobile_money"]
+    },
+    "dueDate": {
+      "type": "datetime"
+    },
+    "paidAt": {
+      "type": "datetime"
+    },
+    "konnectRef": {
+      "type": "string"
+    },
+    "patient": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "doctor": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "appointment": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::appointment.appointment"
+    },
+    "labOrder": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::lab-order.lab-order"
+    }
+  }
+}

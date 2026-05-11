@@ -1,18 +1,21 @@
-/// Configuration OpenAI pour MediCare AI.
-/// ⚠️  Remplacez [openAiKey] par votre clé avant de lancer l'app.
+/// Configuration AI pour MediCare.
+/// ⚠️  La clé OpenAI N'EST PLUS utilisée côté client Flutter.
+/// L'IA passe désormais par le backend (/ai-assistant/chat) qui détient
+/// la clé côté serveur — pas de fuite dans le code client.
 class AiConfig {
   AiConfig._();
 
-  // 🔑 Votre clé API OpenAI — https://platform.openai.com/api-keys
-  static const openAiKey = 'sk-VOTRE_CLE_ICI';
+  // Clé OpenAI côté client : VOLONTAIREMENT VIDE
+  // L'appel réel se fait via le backend (voir ai_repository.dart)
+  static const openAiKey = '';
 
   static const model       = 'gpt-4o-mini';
   static const baseUrl     = 'https://api.openai.com/v1';
   static const maxTokens   = 600;
   static const temperature = 0.7;
 
-  static bool get isConfigured =>
-      openAiKey.isNotEmpty && openAiKey != 'sk-VOTRE_CLE_ICI';
+  // isConfigured est toujours true : l'IA est gérée côté backend
+  static bool get isConfigured => true;
 
   // ── Prompt système — mode chatbot ────────────────────────────────────────
   static const systemChatPrompt = '''

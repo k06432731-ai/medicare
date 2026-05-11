@@ -137,7 +137,10 @@ class DoctorPlanningScreen extends ConsumerWidget {
                                   .updateStatus(a.id, 'completed'),
                               onCancel: () => ref
                                   .read(appointmentsProvider.notifier)
-                                  .updateStatus(a.id, 'cancelled')),
+                                  .updateStatus(a.id, 'cancelled'),
+                              onNoShow: () => ref
+                                  .read(appointmentsProvider.notifier)
+                                  .updateStatus(a.id, 'no_show')),
                         )),
                   ],
                 );
@@ -155,6 +158,7 @@ class _DoctorAppointmentCard extends StatelessWidget {
   final VoidCallback onConfirm;
   final VoidCallback onComplete;
   final VoidCallback onCancel;
+  final VoidCallback onNoShow;
   final BuildContext pageContext;
 
   const _DoctorAppointmentCard({
@@ -162,6 +166,7 @@ class _DoctorAppointmentCard extends StatelessWidget {
     required this.onConfirm,
     required this.onComplete,
     required this.onCancel,
+    required this.onNoShow,
     required this.pageContext,
   });
 
@@ -348,6 +353,27 @@ class _DoctorAppointmentCard extends StatelessWidget {
                 ),
               ],
             ),
+            // No-show button: only for past appointments
+            if (appointment.appointmentDate.isBefore(DateTime.now())) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onNoShow,
+                  icon: const Icon(Icons.person_off_rounded,
+                      size: 16, color: AppColors.textSecondary),
+                  label: Text('Absent (no-show)',
+                      style: GoogleFonts.poppins(
+                          color: AppColors.textSecondary, fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.textSecondary),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
           ],
 
           // Ordonnance button for completed appointments

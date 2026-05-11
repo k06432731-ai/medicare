@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.8
+  sdk: '>=3.4.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -52,11 +52,18 @@ dependencies:
 
   # Profile & Documents (Sprint 16)
   image_picker: ^1.1.2
+  file_picker: ^8.1.7
   pdf: ^3.11.1
   printing: ^5.13.2
 
-  # Payment — Stripe (Sprint 18)
-  flutter_stripe: ^11.3.0
+  # Payment — Konnect (Tunisia, Sprint 19)
+  webview_flutter: ^4.10.0
+
+  # Deep links
+  app_links: ^6.3.2
+
+  # Filesystem
+  path_provider: ^2.1.5
 
   # Utils
   intl: ^0.20.2

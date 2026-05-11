@@ -198,3 +198,30 @@ final scheduleBlockProvider =
     StateNotifierProvider<ScheduleBlockNotifier, ScheduleBlockState>((ref) {
   return ScheduleBlockNotifier(ref.watch(scheduleRepositoryProvider));
 });
+
+
+// ── Public Availability (patient-facing) ─────────────────────────────────────
+
+class PublicAvailabilityParams {
+  final int doctorId;
+  final String date; // YYYY-MM-DD
+  const PublicAvailabilityParams({required this.doctorId, required this.date});
+
+  @override
+  bool operator ==(Object other) =>
+      other is PublicAvailabilityParams &&
+      other.doctorId == doctorId &&
+      other.date == date;
+
+  @override
+  int get hashCode => Object.hash(doctorId, date);
+}
+
+final publicAvailabilityProvider =
+    FutureProvider.autoDispose.family<Map<String, dynamic>, PublicAvailabilityParams>(
+        (ref, params) async {
+  return ref.watch(scheduleRepositoryProvider).getPublicAvailability(
+        doctorId: params.doctorId,
+        date: params.date,
+      );
+});

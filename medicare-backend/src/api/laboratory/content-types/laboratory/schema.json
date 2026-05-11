@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "laboratories",
+  "info": {
+    "singularName": "laboratory",
+    "pluralName": "laboratories",
+    "displayName": "Laboratory",
+    "description": "Medical laboratories, clinics and diagnostic centers"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["laboratory", "clinic", "hospital", "radiology", "other"],
+      "default": "laboratory",
+      "required": true
+    },
+    "address": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "email"
+    },
+    "description": {
+      "type": "text"
+    },
+    "openingHours": {
+      "type": "string"
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

@@ -9,6 +9,7 @@ import '../../../../features/auth/providers/auth_provider.dart';
 import '../../../../features/auth/providers/auth_state.dart';
 import '../../../../features/appointment/data/models/appointment_model.dart';
 import '../../../../features/appointment/providers/appointment_provider.dart';
+import '../../../../features/home/presentation/screens/patient_shell_screen.dart';
 import '../../../../features/prescription/providers/prescription_provider.dart';
 import '../../../../features/invoice/providers/invoice_provider.dart';
 import '../../../../features/invoice/data/models/invoice_model.dart';
@@ -51,6 +52,10 @@ class PatientDashboardScreen extends ConsumerWidget {
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 const SizedBox(height: 24),
+
+                // Email confirmation banner
+                if (user != null && !user.confirmed)
+                  _EmailConfirmationBanner(email: user.email),
 
                 // Recovery banner — shown only when there is an open case
                 if (patientId > 0) PatientRecoveryBanner(patientId: patientId),
@@ -97,6 +102,56 @@ class PatientDashboardScreen extends ConsumerWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Header
+// ── Email confirmation banner ─────────────────────────────────────────────────
+
+class _EmailConfirmationBanner extends StatelessWidget {
+  final String email;
+  const _EmailConfirmationBanner({required this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3CD),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFFCC02)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.mark_email_unread_rounded,
+              color: Color(0xFF856404), size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Confirmez votre adresse email',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: const Color(0xFF856404),
+                  ),
+                ),
+                Text(
+                  'Un email a été envoyé à $email. '
+                  'Confirmez votre compte pour accéder à toutes les fonctionnalités.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: const Color(0xFF856404),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _DashboardHeader extends ConsumerWidget {
@@ -482,7 +537,7 @@ class _NextAppointmentCard extends ConsumerWidget {
           ..sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
 
         if (upcoming.isEmpty) return _buildEmpty(context);
-        return _buildCard(context, upcoming.first);
+        return _buildCard(context, upcoming.first, ref);
       },
     );
   }
@@ -546,7 +601,7 @@ class _NextAppointmentCard extends ConsumerWidget {
     );
   }
 
-  Widget _buildCard(BuildContext context, AppointmentModel appt) {
+  Widget _buildCard(BuildContext context, AppointmentModel appt, WidgetRef ref) {
     final now = DateTime.now();
     final apptDate = appt.appointmentDate;
 
@@ -672,7 +727,35 @@ class _NextAppointmentCard extends ConsumerWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: Text('Annuler le rendez-vous ?',
+                            style: GoogleFonts.poppins(fontWeight: FontWeight.w700)),
+                        content: Text(
+                            'Cette action est irréversible.',
+                            style: GoogleFonts.poppins(fontSize: 13)),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: Text('Non',
+                                style: GoogleFonts.poppins()),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.error),
+                            child: Text('Oui, annuler',
+                                style: GoogleFonts.poppins(color: Colors.white)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true && context.mounted) {
+                      await ref.read(appointmentsProvider.notifier).cancel(appt.id);
+                    }
+                  },
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.white54, width: 1.5),
                     shape: RoundedRectangleBorder(
@@ -691,7 +774,8 @@ class _NextAppointmentCard extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => context.go(Routes.patientHome),
+                  // Navigue vers l'onglet Rendez-vous (index 1) au lieu de rester sur l'accueil
+                  onPressed: () => ref.read(patientTabProvider.notifier).state = 1,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AppColors.primary,
@@ -794,7 +878,7 @@ class _Tip {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MediCare AI card
+// MediCare AI cards (chat assistant + docteur IA triage)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _AiAssistantCard extends StatelessWidget {
@@ -802,72 +886,145 @@ class _AiAssistantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push(Routes.aiAssistant),
-      child: Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF4F46E5), Color(0xFF0EA5E9)],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 54,
-              height: 54,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(16),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Chat assistant
+        GestureDetector(
+          onTap: () => context.push(Routes.aiAssistant),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF4F46E5), Color(0xFF0EA5E9)],
               ),
-              child: const Icon(Icons.auto_awesome_rounded,
-                  color: Colors.white, size: 28),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('MediCare AI',
-                      style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white)),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Conseils santé · Triage symptômes',
-                    style: GoogleFonts.poppins(
-                        fontSize: 12, color: Colors.white70),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                ],
-              ),
+                  child: const Icon(Icons.auto_awesome_rounded,
+                      color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Assistant IA',
+                          style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white)),
+                      Text(
+                        'Posez toutes vos questions santé',
+                        style: GoogleFonts.poppins(
+                            fontSize: 12, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('Chat',
+                      style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
+                ),
+              ],
             ),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text('Démarrer',
-                  style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white)),
-            ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(height: 10),
+        // Docteur IA triage
+        GestureDetector(
+          onTap: () => context.push(Routes.aiDoctor),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF7C3AED), Color(0xFFEC4899)],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.3),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.medical_services_rounded,
+                      color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Docteur IA',
+                          style: GoogleFonts.poppins(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white)),
+                      Text(
+                        'Analyser mes symptômes · Triage',
+                        style: GoogleFonts.poppins(
+                            fontSize: 12, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('Analyser',
+                      style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

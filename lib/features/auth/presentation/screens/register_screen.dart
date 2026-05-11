@@ -61,7 +61,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     // Build registration payload for Strapi
     final data = <String, dynamic>{
-      'username': _emailController.text.trim(),
+      // Username unique basé sur prénom+nom+timestamp pour éviter les conflits Strapi
+      'username': '${_firstNameController.text.trim().toLowerCase()}_${_lastNameController.text.trim().toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}',
       'email': _emailController.text.trim(),
       'password': _passwordController.text,
       'firstName': _firstNameController.text.trim(),
@@ -94,8 +95,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
     );
     if (picked != null) {
+      // Format ISO 8601 requis par Strapi (yyyy-MM-dd)
       _dobController.text =
-          '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
     }
   }
 

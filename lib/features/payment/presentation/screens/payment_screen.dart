@@ -4,10 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart' hide PaymentMethod;
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:printing/printing.dart';
 import '../../../../core/config/stripe_config.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/services/payment_receipt_service.dart';
 import '../../../invoice/data/models/invoice_model.dart';
 import '../../data/repositories/payment_repository.dart';
+import '../../providers/payment_provider.dart';
+import 'payment_webview_screen.dart';
 
 class PaymentScreen extends ConsumerStatefulWidget {
   final int invoiceId;
@@ -25,17 +29,20 @@ class PaymentScreen extends ConsumerStatefulWidget {
 
 class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   PaymentMethod? _selected;
+  bool _konnectSelected = false;
   bool _isLoading = false;
   String? _error;
 
   // ── Pay entry point ─────────────────────────────────────────────────────────
 
   Future<void> _pay() async {
-    if (_selected == null || _isLoading) return;
+    if ((_selected == null && !_konnectSelected) || _isLoading) return;
     setState(() { _isLoading = true; _error = null; });
 
     try {
-      if (_selected!.isStripe) {
+      if (_konnectSelected) {
+        await _payWithKonnect();
+      } else if (_selected!.isStripe) {
         await _payWithStripe();
       } else {
         await _payDirect();
@@ -60,6 +67,50 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       invoiceId: widget.invoiceId,
       method: _selected!.apiValue,
     );
+    if (mounted) _showSuccess();
+  }
+
+  // ── Konnect payment (Tunisia) ───────────────────────────────────────────────
+
+  Future<void> _payWithKonnect() async {
+    final notifier = ref.read(konnectPaymentProvider.notifier);
+
+    // 1. Init côté backend → récupère payUrl + paymentRef
+    final init = await notifier.payWithKonnect(widget.invoiceId);
+    if (init == null) {
+      throw Exception(
+        ref.read(konnectPaymentProvider).error ??
+            'Erreur lors de l\'initialisation Konnect',
+      );
+    }
+
+    if (!mounted) return;
+
+    // 2. Ouvre la WebView Konnect — attend la redirection deep-link
+    final paymentRef = await Navigator.of(context).push<String?>(
+      MaterialPageRoute(
+        builder: (_) => PaymentWebviewScreen(
+          payUrl: init.payUrl,
+          paymentRef: init.paymentRef,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+
+    if (paymentRef == null) {
+      // Annulé / échec
+      throw Exception('Paiement annulé ou échoué.');
+    }
+
+    // 3. Vérifie le statut auprès du backend (qui re-vérifie auprès de Konnect)
+    final verify = await notifier.verify(paymentRef);
+    if (verify == null || !verify.isCompleted) {
+      throw Exception(
+        ref.read(konnectPaymentProvider).error ??
+            'Paiement Konnect non confirmé.',
+      );
+    }
+
     if (mounted) _showSuccess();
   }
 
@@ -159,26 +210,46 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     .where((m) => !m.isStripe)
                     .map((m) => _MethodTile(
                           method: m,
-                          selected: _selected == m,
-                          onTap: () =>
-                              setState(() { _selected = m; _error = null; }),
+                          selected: _selected == m && !_konnectSelected,
+                          onTap: () => setState(() {
+                            _selected = m;
+                            _konnectSelected = false;
+                            _error = null;
+                          }),
                         )),
 
                 const SizedBox(height: 20),
-                _SectionLabel('Paiement en ligne sécurisé'),
+                _SectionLabel('Paiement en ligne — Tunisie'),
+                const SizedBox(height: 8),
+                _KonnectMethodTile(
+                  selected: _konnectSelected,
+                  onTap: () => setState(() {
+                    _konnectSelected = true;
+                    _selected = null;
+                    _error = null;
+                  }),
+                ),
+                const SizedBox(height: 12),
+                if (_konnectSelected) _KonnectInfoCard(amount: widget.amount),
+
+                const SizedBox(height: 20),
+                _SectionLabel('Paiement en ligne international'),
                 const SizedBox(height: 8),
                 _MethodTile(
                   method: PaymentMethod.card,
-                  selected: _selected == PaymentMethod.card,
-                  onTap: () =>
-                      setState(() { _selected = PaymentMethod.card; _error = null; }),
+                  selected: _selected == PaymentMethod.card && !_konnectSelected,
+                  onTap: () => setState(() {
+                    _selected = PaymentMethod.card;
+                    _konnectSelected = false;
+                    _error = null;
+                  }),
                   badge: 'Visa · Mastercard · 3D Secure',
                   highlighted: true,
                 ),
 
                 // ── Info Stripe ──────────────────────────────────────────────
                 const SizedBox(height: 12),
-                if (_selected == PaymentMethod.card)
+                if (_selected == PaymentMethod.card && !_konnectSelected)
                   _StripeInfoCard(amount: widget.amount),
 
                 // ── Erreur ───────────────────────────────────────────────────
@@ -227,7 +298,10 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: (_selected == null || _isLoading) ? null : _pay,
+                  onPressed: ((_selected == null && !_konnectSelected) ||
+                          _isLoading)
+                      ? null
+                      : _pay,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.doctorColor,
                     foregroundColor: Colors.white,
@@ -244,11 +318,13 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2.5, color: Colors.white))
                       : Text(
-                          _selected == null
-                              ? 'Sélectionnez un mode de paiement'
-                              : _selected == PaymentMethod.card
-                                  ? 'Payer ${widget.amount.toStringAsFixed(2)} DT par carte'
-                                  : 'Confirmer le paiement en ${_selected!.label.toLowerCase()}',
+                          _konnectSelected
+                              ? 'Payer ${widget.amount.toStringAsFixed(2)} DT via Konnect'
+                              : _selected == null
+                                  ? 'Sélectionnez un mode de paiement'
+                                  : _selected == PaymentMethod.card
+                                      ? 'Payer ${widget.amount.toStringAsFixed(2)} DT par carte'
+                                      : 'Confirmer le paiement en ${_selected!.label.toLowerCase()}',
                           style: GoogleFonts.poppins(
                               fontWeight: FontWeight.w700, fontSize: 14)),
                 ),
@@ -296,22 +372,73 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
         actionsPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.pop(); // retour à la liste des factures
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 13),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text('Fermer',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Bouton reçu PDF
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.picture_as_pdf_rounded, size: 18),
+                    label: Text('Voir reçu',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                    onPressed: () async {
+                      try {
+                        final file =
+                            await PaymentReceiptService.generateReceipt(
+                          invoiceNumber: '#${widget.invoiceId}',
+                          patientName: 'Patient',
+                          doctorName: 'Médecin',
+                          amount: widget.amount,
+                          paidAt: DateTime.now(),
+                          paymentMethod: _konnectSelected
+                              ? 'Konnect (carte / wallet)'
+                              : _selected?.label ?? 'Carte bancaire',
+                          transactionId:
+                              'TXN-${DateTime.now().millisecondsSinceEpoch}',
+                        );
+                        final bytes = await file.readAsBytes();
+                        await Printing.layoutPdf(
+                          onLayout: (_) async => bytes,
+                          name:
+                              'recu_facture_${widget.invoiceId}.pdf',
+                        );
+                      } catch (_) {}
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: BorderSide(
+                          color: AppColors.primary.withValues(alpha: 0.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Bouton fermer
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.pop(); // retour à la liste des factures
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('Fermer',
+                        style:
+                            GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -352,8 +479,9 @@ class _MethodTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // highlighted = méthode Stripe (carte) → primary blue ; sinon doctorColor green
     final activeColor =
-        highlighted ? AppColors.doctorColor : AppColors.doctorColor;
+        highlighted ? AppColors.primary : AppColors.doctorColor;
 
     return GestureDetector(
       onTap: onTap,
@@ -524,6 +652,180 @@ class _StripeInfoCard extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Konnect widgets ──────────────────────────────────────────────────────────
+
+class _KonnectMethodTile extends StatelessWidget {
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _KonnectMethodTile({required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    const activeColor = Color(0xFF00A859); // vert Konnect
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: selected ? activeColor.withValues(alpha: 0.06) : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? activeColor : AppColors.divider,
+            width: selected ? 2 : 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                      color: activeColor.withValues(alpha: 0.12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2))
+                ]
+              : [],
+        ),
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: selected
+                    ? activeColor.withValues(alpha: 0.12)
+                    : AppColors.background,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.account_balance_wallet_rounded,
+                color: selected ? activeColor : AppColors.textSecondary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Payer par carte / wallet (Konnect)',
+                      style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: selected
+                              ? activeColor
+                              : AppColors.textPrimary)),
+                  Text('Carte CIB · e-DINAR · Wallet Konnect',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: selected
+                              ? activeColor.withValues(alpha: 0.7)
+                              : AppColors.textSecondary)),
+                ],
+              ),
+            ),
+            Icon(
+              selected
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              color: selected ? activeColor : AppColors.divider,
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _KonnectInfoCard extends StatelessWidget {
+  final double amount;
+  const _KonnectInfoCard({required this.amount});
+
+  @override
+  Widget build(BuildContext context) {
+    const konnectGreen = Color(0xFF00A859);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            konnectGreen.withValues(alpha: 0.08),
+            konnectGreen.withValues(alpha: 0.04),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: konnectGreen.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: konnectGreen,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('Konnect',
+                    style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        letterSpacing: 0.5)),
+              ),
+              const SizedBox(width: 10),
+              Text('Paiement local sécurisé',
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: AppColors.textPrimary)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          const _KonnectFeatureRow(
+            icon: Icons.credit_card_rounded,
+            text: 'Carte bancaire tunisienne (Visa/Mastercard CIB)',
+          ),
+          const SizedBox(height: 6),
+          const _KonnectFeatureRow(
+            icon: Icons.account_balance_wallet_rounded,
+            text: 'e-DINAR (Poste Tunisienne) + Wallet Konnect',
+          ),
+          const SizedBox(height: 6),
+          const _KonnectFeatureRow(
+            icon: Icons.lock_rounded,
+            text: 'Paiement chiffré — montant en TND directement',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KonnectFeatureRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _KonnectFeatureRow({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.check_circle_rounded,
+              size: 14, color: Color(0xFF00A859)),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(text,
+                style: const TextStyle(
+                    fontSize: 11.5, color: AppColors.textSecondary)),
+          ),
+        ],
+      );
 }
 
 class _StripeFeatureRow extends StatelessWidget {

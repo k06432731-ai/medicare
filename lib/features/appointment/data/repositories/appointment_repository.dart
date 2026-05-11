@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:medicare/core/network/dio_client.dart';
 import 'package:medicare/features/appointment/data/models/appointment_model.dart';
@@ -7,7 +8,7 @@ final appointmentRepositoryProvider = Provider<AppointmentRepository>((ref) {
 });
 
 class AppointmentRepository {
-  final dynamic _dio;
+  final Dio _dio;
 
   AppointmentRepository(this._dio);
 
@@ -18,8 +19,9 @@ class AppointmentRepository {
         'sort': 'appointmentDate:desc',
         'pagination[pageSize]': '50',
       };
+      // Strapi v5 filter syntax — ?filters[status][$eq]=value
       if (status != null && status != 'all') {
-        params['status'] = status;
+        params['filters[status][\$eq]'] = status;
       }
 
       final response = await _dio.get('/appointments', queryParameters: params);

@@ -23,7 +23,7 @@ class AppColors {
   static const Color errorSurface = Color(0xFFFEF2F2);
   static const Color warning = Color(0xFFF59E0B);
   static const Color warningSurface = Color(0xFFFFFBEB);
-  static const Color success = Color(0xFF10B981);
+  static const Color success = Color(0xFF22C55E); // vert légèrement distinct de secondary
   static const Color successSurface = Color(0xFFECFDF5);
 
   // Backgrounds

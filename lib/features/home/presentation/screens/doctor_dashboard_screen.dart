@@ -184,9 +184,14 @@ class DoctorDashboardScreen extends ConsumerWidget {
                                   trailing: const Icon(
                                       Icons.chevron_right_rounded,
                                       color: AppColors.textHint),
-                                  onTap: () => ref
-                                      .read(doctorTabProvider.notifier)
-                                      .state = 2,
+                                  onTap: () => context.push(
+                                    Routes.doctorPatientDetail,
+                                    extra: {
+                                      'patientId': p['id'] as int? ?? 0,
+                                      'patientName': name,
+                                      'patientPhone': p['phone'] as String?,
+                                    },
+                                  ),
                                 ),
                                 if (i < patients.length - 1)
                                   const Divider(height: 1, indent: 72),
