@@ -29,7 +29,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         _ => AppColors.patientColor,
       };
 
-  String get _roleLabel => switch (widget.role) {
+  String get _roleLabel => _roleLabelOf(widget.role);
+
+  String _roleLabelOf(String role) => switch (role) {
         'doctor' => 'Médecin',
         'admin' => 'Administrateur',
         _ => 'Patient',
@@ -73,6 +75,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         );
         ref.read(authProvider.notifier).clearError();
+      }
+      // Role mismatch guard — refuse login if the user's actual role
+      // doesn't match what they selected on the role-selection screen.
+      if (next is AuthAuthenticated) {
+        final actualRole = next.user.role; // 'patient' / 'doctor' / 'admin'
+        if (actualRole != widget.role) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Ce compte est un compte ${_roleLabelOf(actualRole)}, '
+                'pas un compte $_roleLabel. Choisissez le bon rôle.',
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+          ref.read(authProvider.notifier).logout();
+          context.go(Routes.roleSelection);
+        }
       }
     });
 

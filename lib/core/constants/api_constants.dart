@@ -45,10 +45,6 @@ class ApiConstants {
   static const String stripeConfirm = '/stripe-engine/confirm';
   static const String stripeWebhook = '/stripe-engine/webhook';
 
-  // ── Konnect (Tunisia) ────────────────────────────────────────────────────
-  static const String konnectInitPayment = '/konnect-engine/init-payment';
-  static const String konnectVerify = '/konnect-engine/verify';
-
   // ── Notifications ─────────────────────────────────────────────────────────
   static const String notifications = '/notifications';
   static const String notificationMy = '/notification-engine/my-notifications';

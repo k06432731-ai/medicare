@@ -116,6 +116,10 @@
       "relation": "oneToMany",
       "target": "api::appointment.appointment",
       "mappedBy": "doctor"
+    },
+    "fcmToken": {
+      "type": "string",
+      "private": true
     }
   }
 }

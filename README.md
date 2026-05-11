@@ -128,9 +128,7 @@ flutter run \
   --dart-define=STRIPE_PUBLISHABLE_KEY=pk_live_xxxxx
 ```
 
-> Alternative gratuite recommandée à Stripe : **Konnect** (pas d'abonnement, commission 2,5 % par paiement). Voir `medicare/docs/KONNECT_SETUP.md`.
-
-Côté backend, créer un fichier `.env` dans `medicare-backend/` avec au minimum : `HOST`, `PORT`, `APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `JWT_SECRET`, `DATABASE_*`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `OPENAI_API_KEY`, `TWILIO_*`.
+Côté backend, créer un fichier `.env` dans `medicare-backend/` avec au minimum : `HOST`, `PORT`, `APP_KEYS`, `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`, `JWT_SECRET`, `DATABASE_*`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. La clé `OPENAI_API_KEY` est optionnelle (IA désactivée par défaut). Pour les push notifications, ajouter `FIREBASE_SERVICE_ACCOUNT` (JSON sur une ligne — voir `docs/FCM_SETUP.md`).
 
 ---
 
@@ -166,7 +164,7 @@ La suite couvre actuellement : les modèles (parsing JSON), les providers (setti
 **Déploiement 100% gratuit (recommandé)** : Fly.io + Neon (PostgreSQL serverless), aucun coût mensuel récurrent — voir `medicare-backend/DEPLOYMENT_FREE.md`.
 
 Pour la mise en production de Stripe en mode **live**, voir `medicare/docs/STRIPE_LIVE_SETUP.md`.
-Alternative gratuite recommandée à Stripe : Konnect — voir `medicare/docs/KONNECT_SETUP.md`.
+Pour configurer les push notifications gratuitement, voir `medicare/docs/FCM_SETUP.md`.
 
 ---
 

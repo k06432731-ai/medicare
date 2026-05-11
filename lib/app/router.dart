@@ -415,6 +415,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return PaymentScreen(
             invoiceId: extra['invoiceId'] as int,
             amount: (extra['amount'] as num).toDouble(),
+            allowCash: extra['allowCash'] as bool? ?? false,
           );
         },
       ),

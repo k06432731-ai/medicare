@@ -46,6 +46,28 @@ module.exports = {
     return ctx.send({ success: true });
   },
 
+  // POST /notification-engine/register-fcm-token
+  async registerFcmToken(ctx) {
+    const user = ctx.state.user;
+    if (!user) return ctx.unauthorized();
+
+    const { token } = ctx.request.body || {};
+    if (!token || typeof token !== 'string') {
+      return ctx.badRequest('token is required');
+    }
+
+    try {
+      await strapi.query('plugin::users-permissions.user').update({
+        where: { id: user.id },
+        data: { fcmToken: token },
+      });
+      return ctx.send({ success: true });
+    } catch (e) {
+      strapi.log.error('[FCM] register token failed:', e);
+      return ctx.internalServerError('Failed to register FCM token');
+    }
+  },
+
   // PUT /notification-engine/mark-all-read
   async markAllRead(ctx) {
     const user = ctx.state.user;

@@ -15,10 +15,10 @@
 | Distribution APK | **GitHub Releases** | Illimité pour repo public, 2 GB/fichier | — |
 | Push notifications | **Firebase Cloud Messaging** | Illimité, gratuit | — |
 | Crash reporting | **Sentry** free tier | 5 000 événements/mois, 1 utilisateur | 26 $/mois (Team) |
-| Paiement | **Konnect** | Pas d'abonnement, commission 2,5 % par paiement réussi (payée par l'utilisateur via les frais) | — |
+| Paiement | **Stripe** (test mode gratuit illimité) | 1,4 % + 0,25 € par paiement réussi en mode live | Stripe Atlas si KYC TN refusé (~500 $/once) |
 | Uptime monitoring | **Better Stack** (optionnel) | 10 monitors, ping 3 min | 18 $/mois |
 | Email transactionnel | Skip — utiliser FCM push à la place | — | Resend free : 3000/mois |
-| SMS | Skip — Twilio coûte 0,04 $/SMS | — | — |
+| SMS | Remplacé par FCM push notifications | — | — |
 
 **Coût total mensuel : 0,00 $** tant qu'on reste dans les quotas.
 
@@ -30,7 +30,7 @@
 - **Fly.io** : créer un compte sur [fly.io/app/sign-up](https://fly.io/app/sign-up)
   Une carte bancaire est demandée pour vérification anti-fraude mais Fly ne facture rien tant que tu restes dans le free tier.
 - **Neon** : créer un compte sur [neon.tech](https://neon.tech) (aucune CB demandée)
-- **Konnect** : créer un compte sur [konnect.network](https://konnect.network)
+- **Stripe** : créer un compte sur [stripe.com](https://stripe.com) (mode test gratuit illimité)
 - **Firebase** (pour FCM) : [console.firebase.google.com](https://console.firebase.google.com)
 - **Sentry** (optionnel) : [sentry.io](https://sentry.io)
 
@@ -126,9 +126,8 @@ fly secrets set \
   DATABASE_USERNAME="medicare_owner" \
   DATABASE_PASSWORD="..." \
   DATABASE_SSL="true" \
-  KONNECT_API_KEY="..." \
-  KONNECT_WALLET_ID="..." \
-  KONNECT_BASE_URL="https://api.preprod.konnect.network/api/v2" \
+  STRIPE_SECRET_KEY="sk_test_..." \
+  STRIPE_WEBHOOK_SECRET="whsec_..." \
   PUBLIC_URL="https://medicare-api.fly.dev" \
   OPENAI_API_KEY=""
 ```
@@ -147,9 +146,8 @@ fly secrets set `
   DATABASE_USERNAME="medicare_owner" `
   DATABASE_PASSWORD="..." `
   DATABASE_SSL="true" `
-  KONNECT_API_KEY="..." `
-  KONNECT_WALLET_ID="..." `
-  KONNECT_BASE_URL="https://api.preprod.konnect.network/api/v2" `
+  STRIPE_SECRET_KEY="sk_test_..." `
+  STRIPE_WEBHOOK_SECRET="whsec_..." `
   PUBLIC_URL="https://medicare-api.fly.dev" `
   OPENAI_API_KEY=""
 ```
@@ -289,7 +287,7 @@ Côté utilisateur Android :
 | Neon compute | 191 h/mois | Le scale-to-zero de Neon gère ça tout seul. |
 | Sentry events | 5 000/mois | Filtrer en `beforeSend` les erreurs non critiques. |
 | GitHub Actions | 2 000 min/mois | Largement suffisant pour un CI simple. |
-| Konnect | Commission 2,5 % | Pas un coût pour toi, l'utilisateur paie via les frais. |
+| Stripe | 1,4 % + 0,25 € par paiement live | Tests en `pk_test_*` 100 % gratuits, illimités. |
 
 ---
 

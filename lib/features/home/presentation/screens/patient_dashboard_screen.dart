@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../app/router.dart';
+import '../../../../core/config/env_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../features/auth/providers/auth_provider.dart';
 import '../../../../features/auth/providers/auth_state.dart';
@@ -72,10 +73,11 @@ class PatientDashboardScreen extends ConsumerWidget {
 
                 const SizedBox(height: 28),
 
-                // Carte MediCare AI
-                const _AiAssistantCard(),
-
-                const SizedBox(height: 28),
+                // Carte MediCare AI — masquée si AI_ENABLED=false
+                if (EnvConfig.aiEnabled) ...[
+                  const _AiAssistantCard(),
+                  const SizedBox(height: 28),
+                ],
 
                 // Next appointment
                 _SectionHeader(title: 'Prochain rendez-vous'),

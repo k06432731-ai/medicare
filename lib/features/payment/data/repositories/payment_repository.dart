@@ -23,32 +23,6 @@ class StripeIntentResult {
   });
 }
 
-// ── Résultat du init Konnect ─────────────────────────────────────────────────
-
-class KonnectInitResult {
-  final String payUrl;
-  final String paymentRef;
-
-  const KonnectInitResult({
-    required this.payUrl,
-    required this.paymentRef,
-  });
-}
-
-class KonnectVerifyResult {
-  final String status; // pending | completed | failed | expired
-  final String paymentRef;
-  final int? invoiceId;
-
-  const KonnectVerifyResult({
-    required this.status,
-    required this.paymentRef,
-    this.invoiceId,
-  });
-
-  bool get isCompleted => status == 'completed';
-}
-
 // ── Résultat du init direct (cash / virement / mobile) ───────────────────────
 
 class DirectPaymentResult {
@@ -99,41 +73,6 @@ class PaymentRepository {
         'invoiceId': invoiceId,
         'paymentIntentId': paymentIntentId,
       });
-    } on DioException catch (e) {
-      throw parseDioError(e);
-    }
-  }
-
-  // ── Konnect (Tunisia) ────────────────────────────────────────────────────
-
-  /// Initie un paiement Konnect côté backend.
-  /// Retourne le payUrl à ouvrir dans la WebView + le paymentRef.
-  Future<KonnectInitResult> initKonnectPayment({required int invoiceId}) async {
-    try {
-      final res = await _dio.post('/konnect-engine/init-payment', data: {
-        'invoiceId': invoiceId,
-      });
-      final data = res.data['data'] as Map<String, dynamic>;
-      return KonnectInitResult(
-        payUrl: data['payUrl'] as String,
-        paymentRef: data['paymentRef'] as String,
-      );
-    } on DioException catch (e) {
-      throw parseDioError(e);
-    }
-  }
-
-  /// Vérifie côté backend (qui re-vérifie auprès de Konnect) qu'un paiement
-  /// est bien complété. Met à jour la facture si succès.
-  Future<KonnectVerifyResult> verifyKonnectPayment(String paymentRef) async {
-    try {
-      final res = await _dio.get('/konnect-engine/verify/$paymentRef');
-      final data = res.data['data'] as Map<String, dynamic>;
-      return KonnectVerifyResult(
-        status: data['status'] as String? ?? 'pending',
-        paymentRef: data['paymentRef'] as String? ?? paymentRef,
-        invoiceId: (data['invoiceId'] as num?)?.toInt(),
-      );
     } on DioException catch (e) {
       throw parseDioError(e);
     }

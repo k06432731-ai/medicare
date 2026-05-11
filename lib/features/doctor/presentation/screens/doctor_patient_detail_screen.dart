@@ -13,7 +13,10 @@ import '../../../invoice/data/models/invoice_model.dart';
 import '../../../invoice/data/repositories/invoice_repository.dart';
 import '../../../invoice/providers/invoice_provider.dart';
 import '../../../laboratory/providers/laboratory_provider.dart';
+// ignore: unused_import — extension LabOrderStatusExt needs explicit import to work at runtime
+import '../../../laboratory/data/models/lab_order_model.dart';
 import '../../../ai_doctor/presentation/widgets/ai_patient_summary_widget.dart';
+import '../../../../core/config/env_config.dart';
 import '../../../../core/services/prescription_pdf_service.dart';
 
 class DoctorPatientDetailScreen extends ConsumerWidget {
@@ -80,11 +83,13 @@ class DoctorPatientDetailScreen extends ConsumerWidget {
         ),
         body: Column(
           children: [
-            // AI summary card — persists across tab switches
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: AiPatientSummaryWidget(patientId: patientId),
-            ),
+            // AI summary card — persists across tab switches.
+            // Hidden when AI features are disabled (--dart-define=AI_ENABLED=false).
+            if (EnvConfig.aiEnabled)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                child: AiPatientSummaryWidget(patientId: patientId),
+              ),
             Expanded(
               child: TabBarView(
                 children: [
@@ -579,7 +584,7 @@ class _LabCard extends StatelessWidget {
               ],
             ),
           ),
-          _Badge(label: order.status.label, color: _statusColor(order.status)),
+          _Badge(label: _statusLabel(order.status), color: _statusColor(order.status)),
         ],
       ),
     );
@@ -591,6 +596,16 @@ class _LabCard extends StatelessWidget {
     if (s.contains('cancelled')) return AppColors.error;
     if (s.contains('progress')) return AppColors.primary;
     return AppColors.warning;
+  }
+
+  /// Local helper — works on dynamic status (LabOrderStatus enum OR String)
+  /// so we don't depend on the LabOrderStatusExt extension being in scope.
+  String _statusLabel(dynamic status) {
+    final s = status.toString();
+    if (s.contains('completed')) return 'Résultats disponibles';
+    if (s.contains('cancelled')) return 'Annulée';
+    if (s.contains('progress')) return 'En cours';
+    return 'En attente';
   }
 }
 

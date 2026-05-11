@@ -101,6 +101,19 @@ class AuthRepository {
     }
   }
 
+  /// Register this device's FCM push token with the backend.
+  /// Saves it on the current user record so the backend can target pushes.
+  Future<void> registerFcmToken(String token) async {
+    try {
+      await _dio.post(
+        '/notification-engine/register-fcm-token',
+        data: {'token': token},
+      );
+    } on DioException catch (e) {
+      throw parseDioError(e);
+    }
+  }
+
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,

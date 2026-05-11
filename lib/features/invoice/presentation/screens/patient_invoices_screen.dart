@@ -63,9 +63,21 @@ class PatientInvoicesScreen extends ConsumerWidget {
                         child: _InvoiceCard(
                           invoice: i,
                           onPay: () async {
+                            // Cash is allowed only when the invoice covers
+                            // an in-person event (lab test or in-person consult).
+                            final isLab = i.type == InvoiceType.labTest;
+                            final apptType =
+                                i.appointment?['type'] as String?;
+                            final isInPersonAppt = i.appointment != null &&
+                                apptType != 'teleconsultation';
+                            final allowCash = isLab || isInPersonAppt;
                             await context.push(
                               Routes.payment,
-                              extra: {'invoiceId': i.id, 'amount': i.amount},
+                              extra: {
+                                'invoiceId': i.id,
+                                'amount': i.amount,
+                                'allowCash': allowCash,
+                              },
                             );
                             // Refresh after returning from payment screen
                             ref.invalidate(invoicesProvider);

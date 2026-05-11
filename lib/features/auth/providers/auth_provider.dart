@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/services/fcm_service.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/models/user_model.dart';
 import 'auth_state.dart';
@@ -43,6 +44,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         role: response.user.role,
       );
       state = AuthAuthenticated(response.user);
+      // Register FCM token with backend (best-effort, non-blocking)
+      FcmService.registerWithBackend(_repository.registerFcmToken);
     } catch (e) {
       state = AuthError(e.toString());
     }
@@ -58,6 +61,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         role: response.user.role,
       );
       state = AuthAuthenticated(response.user);
+      // Register FCM token with backend (best-effort, non-blocking)
+      FcmService.registerWithBackend(_repository.registerFcmToken);
     } catch (e) {
       state = AuthError(e.toString());
     }

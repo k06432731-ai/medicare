@@ -1,0 +1,6 @@
+{
+  "_comment": "PLACEHOLDER — replace this file with the real google-services.json from Firebase Console, then save it as android/app/google-services.json (without the .template suffix). See docs/FCM_SETUP.md",
+  "project_info": {
+    "project_id": "REPLACE_ME"
+  }
+}

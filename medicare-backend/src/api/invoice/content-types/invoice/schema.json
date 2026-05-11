@@ -39,9 +39,6 @@
     "paidAt": {
       "type": "datetime"
     },
-    "konnectRef": {
-      "type": "string"
-    },
     "patient": {
       "type": "relation",
       "relation": "manyToOne",

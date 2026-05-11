@@ -7,17 +7,134 @@ import '../../../../app/router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../features/auth/providers/auth_provider.dart';
 import '../../../../features/auth/providers/auth_state.dart';
+import '../../../doctor/providers/doctor_provider.dart';
+import '../../../doctor/data/models/doctor_model.dart';
 import '../../data/models/conversation_model.dart';
+import '../../data/repositories/messaging_repository.dart';
 import '../../providers/messaging_provider.dart';
 
 class ConversationsScreen extends ConsumerWidget {
   const ConversationsScreen({super.key});
+
+  Future<void> _startNewConversation(BuildContext context, WidgetRef ref) async {
+    final authState = ref.read(authProvider);
+    if (authState is! AuthAuthenticated) return;
+    final isDoctor = authState.user.role == 'doctor';
+
+    // Pour l'instant on liste seulement les médecins (côté patient).
+    // Côté médecin : "nouvelle conversation" sera initié depuis la fiche patient.
+    if (isDoctor) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pour discuter avec un patient, ouvrez sa fiche depuis "Patients".'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Consumer(
+        builder: (ctx, ref2, _) {
+          final doctorsAsync = ref2.watch(doctorsProvider(null));
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.7,
+            maxChildSize: 0.9,
+            minChildSize: 0.4,
+            builder: (_, scrollCtrl) => Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.medical_services_rounded,
+                          color: AppColors.primary, size: 22),
+                      const SizedBox(width: 10),
+                      Text('Choisir un médecin',
+                          style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700, fontSize: 16)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: doctorsAsync.when(
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(
+                        child: Text('Erreur : $e',
+                            style: const TextStyle(color: AppColors.error))),
+                    data: (doctors) {
+                      if (doctors.isEmpty) {
+                        return const Center(
+                            child: Text('Aucun médecin disponible.'));
+                      }
+                      return ListView.builder(
+                        controller: scrollCtrl,
+                        itemCount: doctors.length,
+                        itemBuilder: (_, i) => _DoctorPickerTile(
+                          doctor: doctors[i],
+                          onTap: () async {
+                            Navigator.of(ctx).pop();
+                            try {
+                              final conv = await ref
+                                  .read(messagingRepositoryProvider)
+                                  .findOrCreate(doctorId: doctors[i].id);
+                              ref.invalidate(conversationsProvider);
+                              if (context.mounted) {
+                                context.push(Routes.chat, extra: {
+                                  'conversation': conv,
+                                  'userId': authState.user.id,
+                                });
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Erreur : $e'),
+                                    backgroundColor: AppColors.error,
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final convsAsync = ref.watch(conversationsProvider);
     final authState = ref.watch(authProvider);
     final userId = authState is AuthAuthenticated ? authState.user.id : 0;
+    final isDoctor =
+        authState is AuthAuthenticated && authState.user.role == 'doctor';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -31,6 +148,18 @@ class ConversationsScreen extends ConsumerWidget {
                 fontSize: 20,
                 color: AppColors.textPrimary)),
       ),
+      floatingActionButton: isDoctor
+          ? null // côté médecin : on initie depuis la fiche patient
+          : FloatingActionButton.extended(
+              onPressed: () => _startNewConversation(context, ref),
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.chat_rounded, color: Colors.white),
+              label: Text('Nouvelle discussion',
+                  style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13)),
+            ),
       body: convsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, st) => Center(
@@ -184,6 +313,40 @@ class _EmptyConversations extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Tuile médecin (sélecteur de nouvelle conversation) ───────────────────────
+
+class _DoctorPickerTile extends StatelessWidget {
+  final DoctorModel doctor;
+  final VoidCallback onTap;
+  const _DoctorPickerTile({required this.doctor, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: CircleAvatar(
+        radius: 22,
+        backgroundColor: AppColors.primarySurface,
+        child: Text(doctor.initials,
+            style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+                fontSize: 13)),
+      ),
+      title: Text('Dr. ${doctor.fullName}',
+          style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600, fontSize: 14)),
+      subtitle: Text(doctor.displaySpecialty,
+          style: GoogleFonts.poppins(
+              fontSize: 12, color: AppColors.textSecondary)),
+      trailing: const Icon(Icons.chat_outlined,
+          color: AppColors.primary, size: 20),
     );
   }
 }

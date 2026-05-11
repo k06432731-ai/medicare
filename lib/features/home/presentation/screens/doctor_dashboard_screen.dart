@@ -112,6 +112,10 @@ class DoctorDashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 28),
                   const DoctorRecoveryWidget(),
+                  // Lien permanent vers le centre de recovery (visible même
+                  // si pas de patient à risque encore détecté).
+                  const SizedBox(height: 16),
+                  _RecoveryCenterCard(),
                   const SizedBox(height: 28),
                   Text('Patients récents',
                       style: GoogleFonts.poppins(
@@ -554,6 +558,69 @@ class _EmptyTodayCard extends StatelessWidget {
             Text("Aucune consultation aujourd'hui",
                 style: GoogleFonts.poppins(
                     color: AppColors.textSecondary, fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Permanent entry card linking to the Recovery Center for the doctor.
+/// Visible regardless of whether at-risk patients are currently detected.
+class _RecoveryCenterCard extends StatelessWidget {
+  const _RecoveryCenterCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push(Routes.recoveryCenter),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFEF4444), Color(0xFFF97316)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFEF4444).withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.health_and_safety_rounded,
+                  color: Colors.white, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Centre de suivi',
+                      style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white)),
+                  Text('Patients à risque, no-show, relances',
+                      style: GoogleFonts.poppins(
+                          fontSize: 12, color: Colors.white70)),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white, size: 16),
           ],
         ),
       ),

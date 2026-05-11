@@ -1,5 +1,7 @@
 'use strict';
 
+const fcmSender = require('../../../services/fcm-sender');
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function displayName(u) {
@@ -13,6 +15,22 @@ async function createNotif(userId, title, body, data) {
     await strapi.query('api::notification.notification').create({
       data: { userId, title, body, type: 'message', data: data || null, read: false },
     });
+    // Also send FCM push if user has a token
+    try {
+      const user = await strapi.query('plugin::users-permissions.user').findOne({
+        where: { id: userId },
+        select: ['id', 'fcmToken'],
+      });
+      if (user && user.fcmToken) {
+        await fcmSender.sendToUser(user.fcmToken, {
+          title,
+          body,
+          data: { type: 'message', ...(data || {}) },
+        });
+      }
+    } catch (fcmErr) {
+      strapi.log.warn('messaging FCM push error:', fcmErr.message);
+    }
   } catch (e) {
     strapi.log.warn('messaging notif error:', e.message);
   }
