@@ -1,38 +1,11 @@
 'use strict';
 
-// ── helper OpenAI ─────────────────────────────────────────────────────────────
+// ── service LLM partagé (compatible OpenAI / Groq / Gemini) ──────────────────
+const { callLLM, extractJson } = require('../../../services/llm');
 
-async function callOpenAI(messages, { maxTokens = 800, temperature = 0.4 } = {}) {
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error('OPENAI_API_KEY non configurée dans .env du backend');
-
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `OpenAI HTTP ${res.status}`);
-  }
-
-  const data = await res.json();
-  return data.choices[0].message.content;
-}
-
-function extractJson(raw) {
-  const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('Réponse JSON non trouvée dans la réponse du modèle');
-  return JSON.parse(match[0]);
+// Alias conservé pour limiter les changements dans les handlers ci-dessous.
+async function callOpenAI(messages, opts = {}) {
+  return callLLM(messages, opts);
 }
 
 // ── prompts ───────────────────────────────────────────────────────────────────

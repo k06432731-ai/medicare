@@ -20,52 +20,9 @@ async function getAuthUser(ctx) {
   }
 }
 
-// Lazy singleton OpenAI (node-fetch ou openai SDK)
-function callOpenAI(messages, temperature, maxTokens) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey || apiKey.startsWith('sk-REMPLACER') || apiKey === '') {
-    throw new Error('OPENAI_API_KEY non configurée côté serveur.');
-  }
-
-  const https = require('https');
-  const body = JSON.stringify({
-    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-    messages,
-    temperature: temperature ?? 0.7,
-    max_tokens: maxTokens ?? 600,
-  });
-
-  return new Promise((resolve, reject) => {
-    const req = https.request(
-      {
-        hostname: 'api.openai.com',
-        path: '/v1/chat/completions',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Length': Buffer.byteLength(body),
-        },
-      },
-      (res) => {
-        let data = '';
-        res.on('data', (chunk) => (data += chunk));
-        res.on('end', () => {
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.error) return reject(new Error(parsed.error.message));
-            resolve(parsed);
-          } catch (e) {
-            reject(new Error('Réponse OpenAI non-JSON'));
-          }
-        });
-      }
-    );
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
-}
+// Service LLM partagé (compatible OpenAI / Groq / Gemini — voir
+// src/services/llm.js et docs/AI_SETUP.md).
+const { callLLM } = require('../../../services/llm');
 
 const SYSTEM_CHAT_PROMPT = `Tu es MediCare AI, assistant médical de l'application MediCare Tunisie.
 Tu aides les patients avec des conseils de santé généraux en français.
@@ -130,8 +87,7 @@ module.exports = {
         maxTokens = 600;
       }
 
-      const result = await callOpenAI(openAiMessages, temperature, maxTokens);
-      const reply = result.choices[0].message.content;
+      const reply = await callLLM(openAiMessages, { temperature, maxTokens });
 
       return ctx.send({ data: { reply } });
     } catch (e) {
@@ -151,16 +107,13 @@ module.exports = {
     if (!symptoms) return ctx.badRequest('symptoms est requis.');
 
     try {
-      const result = await callOpenAI(
+      const raw = await callLLM(
         [
           { role: 'system', content: SYSTEM_TRIAGE_PROMPT },
           { role: 'user', content: symptoms },
         ],
-        0.3,
-        300
+        { temperature: 0.3, maxTokens: 300 }
       );
-
-      const raw = result.choices[0].message.content;
 
       // Parser le JSON retourné par le modèle
       let parsed;

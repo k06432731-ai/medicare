@@ -3,9 +3,11 @@
 /// Lancement dev  : flutter run --dart-define=API_URL=http://10.0.2.2:1337/api
 /// Lancement prod : flutter run --release --dart-define=API_URL=https://ton-domaine.com/api
 ///
-/// Pour activer les fonctionnalités IA (désactivées par défaut) :
-///   flutter run --dart-define=AI_ENABLED=true
-/// (Une clé OPENAI_API_KEY doit également être configurée côté backend.)
+/// Les fonctionnalités IA (assistant patient + outils IA médecin) sont
+/// ACTIVÉES par défaut. Pour les désactiver ponctuellement :
+///   flutter run --dart-define=AI_ENABLED=false
+/// Une clé LLM doit être configurée côté backend (OPENAI_API_KEY) — voir
+/// docs/AI_SETUP.md pour les options gratuites (Groq, Google Gemini).
 class EnvConfig {
   EnvConfig._();
 
@@ -15,10 +17,10 @@ class EnvConfig {
     defaultValue: 'http://10.0.2.2:1337/api', // Android emulator par défaut
   );
 
-  // ── Flag IA (désactivé par défaut, gratuit sans OpenAI) ─────────────────
+  // ── Flag IA (activé par défaut) ─────────────────────────────────────────
   // Quand false, les boutons / cartes IA ne s'affichent pas dans l'UI.
   static bool get aiEnabled =>
-      const bool.fromEnvironment('AI_ENABLED', defaultValue: false);
+      const bool.fromEnvironment('AI_ENABLED', defaultValue: true);
 
   // ── Helpers ─────────────────────────────────────────────────────────────
   static bool get isProduction => !apiUrl.contains('10.0.2.2') &&

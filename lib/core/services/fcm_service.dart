@@ -8,6 +8,11 @@ class FcmService {
   static String? _fcmToken;
   static String? get fcmToken => _fcmToken;
 
+  /// Callback de ré-inscription du jeton auprès du backend.
+  /// Renseigné via [registerWithBackend] ; réutilisé automatiquement
+  /// lorsque Firebase fait tourner le jeton (onTokenRefresh).
+  static Future<void> Function(String token)? _registerFn;
+
   /// Initialize Firebase + FCM. Safe to call multiple times.
   /// Returns the FCM token or null if init failed (e.g. placeholder google-services.json).
   static Future<String?> init() async {
@@ -23,11 +28,19 @@ class FcmService {
         _logger.i('FCM Token: ${_fcmToken!.substring(0, 20)}...');
       }
 
-      // Listen for token refresh
-      messaging.onTokenRefresh.listen((newToken) {
+      // Listen for token refresh — re-register the new token with the
+      // backend if a registration callback has been provided.
+      messaging.onTokenRefresh.listen((newToken) async {
         _fcmToken = newToken;
         _logger.i('FCM Token refreshed');
-        // TODO: re-register with backend
+        if (_registerFn != null) {
+          try {
+            await _registerFn!(newToken);
+            _logger.i('FCM token refreshed and re-registered with backend');
+          } catch (e) {
+            _logger.w('FCM token re-registration failed: $e');
+          }
+        }
       });
 
       // Foreground messages — also show as local notification
@@ -46,10 +59,13 @@ class FcmService {
     }
   }
 
-  /// Register the FCM token with the backend so it can send pushes to this device.
+  /// Register the FCM token with the backend so it can send pushes to this
+  /// device. The callback is also memorised so that a later token refresh
+  /// (onTokenRefresh) is automatically re-registered.
   static Future<void> registerWithBackend(
     Future<void> Function(String token) registerFn,
   ) async {
+    _registerFn = registerFn;
     if (_fcmToken != null) {
       try {
         await registerFn(_fcmToken!);
